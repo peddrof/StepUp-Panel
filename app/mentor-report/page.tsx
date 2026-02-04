@@ -109,22 +109,33 @@ export default function MentorReportPage() {
     setSubmitting(true);
 
     try {
-      const group = groups.find((g) => g.id === selectedGroupId);
-      if (group?.mentor?.pin_code !== pinCode) {
-        setPinError(true);
-        setSubmitting(false);
-        return;
+      const apiUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/submit-mentor-report`;
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          group_id: selectedGroupId,
+          date: format(selectedDate, "yyyy-MM-dd"),
+          topic,
+          attendance_data: attendance,
+          notes: notes || null,
+          pin_code: pinCode,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 401 || data.error === "Invalid PIN code") {
+          setPinError(true);
+          setSubmitting(false);
+          return;
+        }
+        throw new Error(data.error || "Failed to submit report");
       }
-
-      const { error } = await supabase.from("class_logs").insert({
-        group_id: selectedGroupId,
-        date: format(selectedDate, "yyyy-MM-dd"),
-        topic,
-        attendance_data: attendance,
-        notes: notes || null,
-      } as any);
-
-      if (error) throw error;
 
       setSubmitted(true);
     } catch (error) {
