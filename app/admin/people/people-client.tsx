@@ -32,7 +32,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Plus, MessageCircle, Mail } from "lucide-react";
+import { Search, Plus, MessageCircle, Mail, Pencil, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { Student, Mentor } from "@/lib/database.types";
 import { supabase } from "@/lib/supabase";
 
@@ -50,6 +60,10 @@ export function PeopleClient({ data }: { data: PeopleData }) {
   const [loading, setLoading] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<any>(null);
   const [groupModalOpen, setGroupModalOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [editingMentor, setEditingMentor] = useState<Mentor | null>(null);
+  const [deleteStudentId, setDeleteStudentId] = useState<string | null>(null);
+  const [deleteMentorId, setDeleteMentorId] = useState<string | null>(null);
 
   const [newStudent, setNewStudent] = useState({
     name: "",
@@ -83,8 +97,16 @@ export function PeopleClient({ data }: { data: PeopleData }) {
     if (!newStudent.name || !newStudent.email) return;
     setLoading(true);
     try {
-      await supabase.from("students").insert(newStudent as any);
+      if (editingStudent) {
+        await supabase
+          .from("students")
+          .update(newStudent as any)
+          .eq("id", editingStudent.id);
+      } else {
+        await supabase.from("students").insert(newStudent as any);
+      }
       setStudentDialogOpen(false);
+      setEditingStudent(null);
       setNewStudent({
         name: "",
         phone: "",
@@ -94,7 +116,34 @@ export function PeopleClient({ data }: { data: PeopleData }) {
       });
       router.refresh();
     } catch (error) {
-      console.error("Error creating student:", error);
+      console.error("Error saving student:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditStudent = (student: Student) => {
+    setEditingStudent(student);
+    setNewStudent({
+      name: student.name,
+      phone: student.phone || "",
+      email: student.email || "",
+      english_level: student.english_level,
+      status: student.status,
+    });
+    setStudentDialogOpen(true);
+  };
+
+  const handleDeleteStudent = async () => {
+    if (!deleteStudentId) return;
+    setLoading(true);
+    try {
+      await supabase.from("group_students").delete().eq("student_id", deleteStudentId);
+      await supabase.from("students").delete().eq("id", deleteStudentId);
+      setDeleteStudentId(null);
+      router.refresh();
+    } catch (error) {
+      console.error("Error deleting student:", error);
     } finally {
       setLoading(false);
     }
@@ -104,8 +153,16 @@ export function PeopleClient({ data }: { data: PeopleData }) {
     if (!newMentor.name || !newMentor.email || !newMentor.pin_code) return;
     setLoading(true);
     try {
-      await supabase.from("mentors").insert(newMentor as any);
+      if (editingMentor) {
+        await supabase
+          .from("mentors")
+          .update(newMentor as any)
+          .eq("id", editingMentor.id);
+      } else {
+        await supabase.from("mentors").insert(newMentor as any);
+      }
       setMentorDialogOpen(false);
+      setEditingMentor(null);
       setNewMentor({
         name: "",
         phone: "",
@@ -115,7 +172,34 @@ export function PeopleClient({ data }: { data: PeopleData }) {
       });
       router.refresh();
     } catch (error) {
-      console.error("Error creating mentor:", error);
+      console.error("Error saving mentor:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditMentor = (mentor: Mentor) => {
+    setEditingMentor(mentor);
+    setNewMentor({
+      name: mentor.name,
+      phone: mentor.phone || "",
+      email: mentor.email,
+      expertise_level: mentor.expertise_level,
+      pin_code: mentor.pin_code,
+    });
+    setMentorDialogOpen(true);
+  };
+
+  const handleDeleteMentor = async () => {
+    if (!deleteMentorId) return;
+    setLoading(true);
+    try {
+      await supabase.from("groups").update({ mentor_id: null }).eq("mentor_id", deleteMentorId);
+      await supabase.from("mentors").delete().eq("id", deleteMentorId);
+      setDeleteMentorId(null);
+      router.refresh();
+    } catch (error) {
+      console.error("Error deleting mentor:", error);
     } finally {
       setLoading(false);
     }
@@ -166,7 +250,22 @@ export function PeopleClient({ data }: { data: PeopleData }) {
                 className="pl-10"
               />
             </div>
-            <Dialog open={studentDialogOpen} onOpenChange={setStudentDialogOpen}>
+            <Dialog
+              open={studentDialogOpen}
+              onOpenChange={(open) => {
+                setStudentDialogOpen(open);
+                if (!open) {
+                  setEditingStudent(null);
+                  setNewStudent({
+                    name: "",
+                    phone: "",
+                    email: "",
+                    english_level: "A1",
+                    status: "active",
+                  });
+                }
+              }}
+            >
               <DialogTrigger asChild>
                 <Button className="bg-sky-800 hover:bg-sky-900">
                   <Plus className="h-4 w-4 mr-2" />
@@ -175,7 +274,9 @@ export function PeopleClient({ data }: { data: PeopleData }) {
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Add New Student</DialogTitle>
+                  <DialogTitle>
+                    {editingStudent ? "Edit Student" : "Add New Student"}
+                  </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
@@ -253,7 +354,13 @@ export function PeopleClient({ data }: { data: PeopleData }) {
                     disabled={loading}
                     className="w-full bg-sky-800 hover:bg-sky-900"
                   >
-                    {loading ? "Adding..." : "Add Student"}
+                    {loading
+                      ? editingStudent
+                        ? "Saving..."
+                        : "Adding..."
+                      : editingStudent
+                      ? "Save Changes"
+                      : "Add Student"}
                   </Button>
                 </div>
               </DialogContent>
@@ -270,6 +377,7 @@ export function PeopleClient({ data }: { data: PeopleData }) {
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="font-semibold">Email</TableHead>
                     <TableHead className="font-semibold">Phone</TableHead>
+                    <TableHead className="font-semibold w-24">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -333,6 +441,26 @@ export function PeopleClient({ data }: { data: PeopleData }) {
                           "-"
                         )}
                       </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-sky-50 hover:text-sky-800"
+                            onClick={() => handleEditStudent(student)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                            onClick={() => setDeleteStudentId(student.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -352,7 +480,22 @@ export function PeopleClient({ data }: { data: PeopleData }) {
                 className="pl-10"
               />
             </div>
-            <Dialog open={mentorDialogOpen} onOpenChange={setMentorDialogOpen}>
+            <Dialog
+              open={mentorDialogOpen}
+              onOpenChange={(open) => {
+                setMentorDialogOpen(open);
+                if (!open) {
+                  setEditingMentor(null);
+                  setNewMentor({
+                    name: "",
+                    phone: "",
+                    email: "",
+                    expertise_level: "intermediate",
+                    pin_code: "",
+                  });
+                }
+              }}
+            >
               <DialogTrigger asChild>
                 <Button className="bg-sky-800 hover:bg-sky-900">
                   <Plus className="h-4 w-4 mr-2" />
@@ -361,7 +504,9 @@ export function PeopleClient({ data }: { data: PeopleData }) {
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Add New Mentor</DialogTitle>
+                  <DialogTitle>
+                    {editingMentor ? "Edit Mentor" : "Add New Mentor"}
+                  </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
@@ -433,7 +578,13 @@ export function PeopleClient({ data }: { data: PeopleData }) {
                     disabled={loading}
                     className="w-full bg-sky-800 hover:bg-sky-900"
                   >
-                    {loading ? "Adding..." : "Add Mentor"}
+                    {loading
+                      ? editingMentor
+                        ? "Saving..."
+                        : "Adding..."
+                      : editingMentor
+                      ? "Save Changes"
+                      : "Add Mentor"}
                   </Button>
                 </div>
               </DialogContent>
@@ -449,6 +600,7 @@ export function PeopleClient({ data }: { data: PeopleData }) {
                     <TableHead className="font-semibold">Groups</TableHead>
                     <TableHead className="font-semibold">Email</TableHead>
                     <TableHead className="font-semibold">Phone</TableHead>
+                    <TableHead className="font-semibold w-24">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -501,6 +653,26 @@ export function PeopleClient({ data }: { data: PeopleData }) {
                           "-"
                         )}
                       </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-sky-50 hover:text-sky-800"
+                            onClick={() => handleEditMentor(mentor)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                            onClick={() => setDeleteMentorId(mentor.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -509,6 +681,46 @@ export function PeopleClient({ data }: { data: PeopleData }) {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={!!deleteStudentId} onOpenChange={() => setDeleteStudentId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Student</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this student? This will also remove them from all groups. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteStudent}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!deleteMentorId} onOpenChange={() => setDeleteMentorId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Mentor</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this mentor? Their groups will be unassigned. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteMentor}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -25,7 +25,17 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Clock, User, Users } from "lucide-react";
+import { Plus, Clock, User, Users, Pencil, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { GroupWithDetails, Mentor, Student } from "@/lib/database.types";
 import { supabase } from "@/lib/supabase";
 
@@ -41,6 +51,8 @@ export function GroupsClient({ data }: { data: GroupsData }) {
   const [loading, setLoading] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<any>(null);
   const [groupModalOpen, setGroupModalOpen] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<GroupWithDetails | null>(null);
+  const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     level: "A1",
@@ -63,30 +75,63 @@ export function GroupsClient({ data }: { data: GroupsData }) {
 
     setLoading(true);
     try {
-      const { data: newGroup, error: groupError } = await supabase
-        .from("groups")
-        .insert({
-          name: formData.name,
-          level: formData.level,
-          schedule_time: formData.schedule_time,
-          mentor_id: formData.mentor_id,
-        } as any)
-        .select()
-        .single();
+      if (editingGroup) {
+        await supabase
+          .from("groups")
+          .update({
+            name: formData.name,
+            level: formData.level,
+            schedule_time: formData.schedule_time,
+            mentor_id: formData.mentor_id,
+          } as any)
+          .eq("id", editingGroup.id);
 
-      if (groupError) throw groupError;
+        const existingStudentIds = editingGroup.students.map((s) => s.id);
+        const toRemove = existingStudentIds.filter((id) => !formData.student_ids.includes(id));
+        const toAdd = formData.student_ids.filter((id) => !existingStudentIds.includes(id));
 
-      const insertedGroup = newGroup as { id: string } | null;
-      if (insertedGroup && formData.student_ids.length > 0) {
-        const groupStudentInserts = formData.student_ids.map((studentId) => ({
-          group_id: insertedGroup.id,
-          student_id: studentId,
-        }));
+        if (toRemove.length > 0) {
+          await supabase
+            .from("group_students")
+            .delete()
+            .eq("group_id", editingGroup.id)
+            .in("student_id", toRemove);
+        }
 
-        await supabase.from("group_students").insert(groupStudentInserts as any);
+        if (toAdd.length > 0) {
+          const groupStudentInserts = toAdd.map((studentId) => ({
+            group_id: editingGroup.id,
+            student_id: studentId,
+          }));
+          await supabase.from("group_students").insert(groupStudentInserts as any);
+        }
+      } else {
+        const { data: newGroup, error: groupError } = await supabase
+          .from("groups")
+          .insert({
+            name: formData.name,
+            level: formData.level,
+            schedule_time: formData.schedule_time,
+            mentor_id: formData.mentor_id,
+          } as any)
+          .select()
+          .single();
+
+        if (groupError) throw groupError;
+
+        const insertedGroup = newGroup as { id: string } | null;
+        if (insertedGroup && formData.student_ids.length > 0) {
+          const groupStudentInserts = formData.student_ids.map((studentId) => ({
+            group_id: insertedGroup.id,
+            student_id: studentId,
+          }));
+
+          await supabase.from("group_students").insert(groupStudentInserts as any);
+        }
       }
 
       setOpen(false);
+      setEditingGroup(null);
       setFormData({
         name: "",
         level: "A1",
@@ -96,7 +141,35 @@ export function GroupsClient({ data }: { data: GroupsData }) {
       });
       router.refresh();
     } catch (error) {
-      console.error("Error creating group:", error);
+      console.error("Error saving group:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditGroup = (group: GroupWithDetails) => {
+    setEditingGroup(group);
+    setFormData({
+      name: group.name,
+      level: group.level,
+      schedule_time: group.schedule_time,
+      mentor_id: group.mentor_id || "",
+      student_ids: group.students.map((s) => s.id),
+    });
+    setOpen(true);
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!deleteGroupId) return;
+    setLoading(true);
+    try {
+      await supabase.from("class_logs").delete().eq("group_id", deleteGroupId);
+      await supabase.from("group_students").delete().eq("group_id", deleteGroupId);
+      await supabase.from("groups").delete().eq("id", deleteGroupId);
+      setDeleteGroupId(null);
+      router.refresh();
+    } catch (error) {
+      console.error("Error deleting group:", error);
     } finally {
       setLoading(false);
     }
@@ -109,7 +182,22 @@ export function GroupsClient({ data }: { data: GroupsData }) {
           title="Turmas"
           description="Manage your class groups and enrollments"
         />
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog
+          open={open}
+          onOpenChange={(isOpen) => {
+            setOpen(isOpen);
+            if (!isOpen) {
+              setEditingGroup(null);
+              setFormData({
+                name: "",
+                level: "A1",
+                schedule_time: "",
+                mentor_id: "",
+                student_ids: [],
+              });
+            }
+          }}
+        >
           <DialogTrigger asChild>
             <Button className="bg-sky-800 hover:bg-sky-900">
               <Plus className="h-4 w-4 mr-2" />
@@ -118,7 +206,9 @@ export function GroupsClient({ data }: { data: GroupsData }) {
           </DialogTrigger>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>Create New Group</DialogTitle>
+              <DialogTitle>
+                {editingGroup ? "Edit Group" : "Create New Group"}
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
@@ -220,7 +310,13 @@ export function GroupsClient({ data }: { data: GroupsData }) {
                 disabled={loading}
                 className="w-full bg-sky-800 hover:bg-sky-900"
               >
-                {loading ? "Creating..." : "Create Group"}
+                {loading
+                  ? editingGroup
+                    ? "Saving..."
+                    : "Creating..."
+                  : editingGroup
+                  ? "Save Changes"
+                  : "Create Group"}
               </Button>
             </div>
           </DialogContent>
@@ -235,25 +331,54 @@ export function GroupsClient({ data }: { data: GroupsData }) {
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {data.groups.map((group) => (
-          <Card
-            key={group.id}
-            className="border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => {
-              setSelectedGroup(group);
-              setGroupModalOpen(true);
-            }}
-          >
+          <Card key={group.id} className="border-gray-200 hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold text-gray-900">
+                <CardTitle
+                  className="text-lg font-semibold text-gray-900 cursor-pointer flex-1"
+                  onClick={() => {
+                    setSelectedGroup(group);
+                    setGroupModalOpen(true);
+                  }}
+                >
                   {group.name}
                 </CardTitle>
-                <Badge className="bg-cyan-500 text-white hover:bg-cyan-600">
-                  {group.level}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-cyan-500 text-white hover:bg-cyan-600">
+                    {group.level}
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 hover:bg-sky-50 hover:text-sky-800"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditGroup(group);
+                    }}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 hover:bg-red-50 hover:text-red-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteGroupId(group.id);
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent
+              className="space-y-4 cursor-pointer"
+              onClick={() => {
+                setSelectedGroup(group);
+                setGroupModalOpen(true);
+              }}
+            >
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <User className="h-4 w-4 text-sky-800" />
                 <span>{group.mentor?.name || "No mentor assigned"}</span>
@@ -287,6 +412,26 @@ export function GroupsClient({ data }: { data: GroupsData }) {
           </Card>
         ))}
       </div>
+
+      <AlertDialog open={!!deleteGroupId} onOpenChange={() => setDeleteGroupId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Group</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this group? This will also remove all class logs associated with this group. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteGroup}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
