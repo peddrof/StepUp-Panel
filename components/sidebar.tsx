@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Users, BookOpen, FileText, Settings, HelpCircle, Search } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, FileText, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/auth-context";
 
 const mainNavItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -16,6 +17,11 @@ const mainNavItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user, signOut } = useAuth();
+
+  const getInitials = (email: string) => {
+    return email.substring(0, 2).toUpperCase();
+  };
 
   return (
     <aside className="flex h-screen w-60 flex-col bg-gray-50 border-r border-gray-200">
@@ -51,17 +57,12 @@ export function Sidebar() {
       </div>
 
       <div className="border-t border-gray-200 p-2 space-y-0.5">
-        <button className="flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 w-full transition-colors">
-          <Settings className="h-4 w-4 flex-shrink-0" />
-          <span>Settings</span>
-        </button>
-        <button className="flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 w-full transition-colors">
-          <HelpCircle className="h-4 w-4 flex-shrink-0" />
-          <span>Get Help</span>
-        </button>
-        <button className="flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 w-full transition-colors">
-          <Search className="h-4 w-4 flex-shrink-0" />
-          <span>Search</span>
+        <button
+          onClick={signOut}
+          className="flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 w-full transition-colors"
+        >
+          <LogOut className="h-4 w-4 flex-shrink-0" />
+          <span>Sign Out</span>
         </button>
       </div>
 
@@ -69,20 +70,17 @@ export function Sidebar() {
         <div className="flex items-center gap-2">
           <Avatar className="h-7 w-7">
             <AvatarFallback className="bg-gray-300 text-gray-700 text-xs font-medium">
-              AD
+              {user?.email ? getInitials(user.email) : "AD"}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-gray-900 truncate">Admin</p>
-            <p className="text-xs text-gray-500 truncate">me@stepup.org</p>
+            <p className="text-xs font-medium text-gray-900 truncate">
+              {user?.email?.split("@")[0] || "Admin"}
+            </p>
+            <p className="text-xs text-gray-500 truncate">
+              {user?.email || "admin@stepup.org"}
+            </p>
           </div>
-          <button className="text-gray-400 hover:text-gray-600">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="rotate-90">
-              <circle cx="8" cy="3" r="1" fill="currentColor"/>
-              <circle cx="8" cy="8" r="1" fill="currentColor"/>
-              <circle cx="8" cy="13" r="1" fill="currentColor"/>
-            </svg>
-          </button>
         </div>
       </div>
     </aside>
