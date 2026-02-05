@@ -177,7 +177,7 @@ export function GroupsClient({ data, onDataChange }: { data: GroupsData; onDataC
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <PageHeader
-          title="Turmas"
+          title="Groups"
           description="Manage your class groups and enrollments"
         />
         <Dialog
