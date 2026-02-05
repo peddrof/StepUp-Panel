@@ -24,7 +24,7 @@ export default function Home() {
               </Button>
             </Link>
             <Link href="/mentor-report">
-              <Button size="lg" ">
+              <Button size="lg" variant="outline">
                 Submit Mentor Report
               </Button>
             </Link>
