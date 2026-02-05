@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { PeopleClient } from "./people-client";
 
@@ -11,62 +11,62 @@ export default function PeoplePage() {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function getPeopleData() {
-      const [studentsRes, mentorsRes, groupsRes, groupStudentsRes] = await Promise.all([
-        supabase.from("students").select("*").order("name"),
-        supabase.from("mentors").select("*").order("name"),
-        supabase.from("groups").select("*, mentor:mentors(*)"),
-        supabase.from("group_students").select("*"),
-      ]);
+  const fetchData = useCallback(async () => {
+    const [studentsRes, mentorsRes, groupsRes, groupStudentsRes] = await Promise.all([
+      supabase.from("students").select("*").order("name"),
+      supabase.from("mentors").select("*").order("name"),
+      supabase.from("groups").select("*, mentor:mentors(*)"),
+      supabase.from("group_students").select("*"),
+    ]);
 
-      const students = studentsRes.data || [];
-      const mentors = mentorsRes.data || [];
-      const groups = groupsRes.data || [];
-      const groupStudents = groupStudentsRes.data || [];
+    const students = studentsRes.data || [];
+    const mentors = mentorsRes.data || [];
+    const groups = groupsRes.data || [];
+    const groupStudents = groupStudentsRes.data || [];
 
-      const studentsWithGroups = students.map((student: any) => {
-        const studentGroupIds = groupStudents
-          .filter((gs: any) => gs.student_id === student.id)
-          .map((gs: any) => gs.group_id);
-        const studentGroups = groups.filter((g: any) => studentGroupIds.includes(g.id));
+    const studentsWithGroups = students.map((student: any) => {
+      const studentGroupIds = groupStudents
+        .filter((gs: any) => gs.student_id === student.id)
+        .map((gs: any) => gs.group_id);
+      const studentGroups = groups.filter((g: any) => studentGroupIds.includes(g.id));
+
+      return {
+        ...student,
+        groups: studentGroups,
+      };
+    });
+
+    const mentorsWithGroups = mentors.map((mentor: any) => {
+      const mentorGroups = groups.filter((g: any) => g.mentor_id === mentor.id);
+
+      const groupsWithStudents = mentorGroups.map((group: any) => {
+        const studentIds = groupStudents
+          .filter((gs: any) => gs.group_id === group.id)
+          .map((gs: any) => gs.student_id);
+        const groupStudentList = students.filter((s: any) => studentIds.includes(s.id));
 
         return {
-          ...student,
-          groups: studentGroups,
+          ...group,
+          students: groupStudentList,
         };
       });
 
-      const mentorsWithGroups = mentors.map((mentor: any) => {
-        const mentorGroups = groups.filter((g: any) => g.mentor_id === mentor.id);
+      return {
+        ...mentor,
+        groups: groupsWithStudents,
+      };
+    });
 
-        const groupsWithStudents = mentorGroups.map((group: any) => {
-          const studentIds = groupStudents
-            .filter((gs: any) => gs.group_id === group.id)
-            .map((gs: any) => gs.student_id);
-          const groupStudentList = students.filter((s: any) => studentIds.includes(s.id));
-
-          return {
-            ...group,
-            students: groupStudentList,
-          };
-        });
-
-        return {
-          ...mentor,
-          groups: groupsWithStudents,
-        };
-      });
-
-      setData({
-        students: studentsWithGroups,
-        mentors: mentorsWithGroups,
-      });
-      setLoading(false);
-    }
-
-    getPeopleData();
+    setData({
+      students: studentsWithGroups,
+      mentors: mentorsWithGroups,
+    });
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   if (loading) {
     return (
@@ -76,5 +76,5 @@ export default function PeoplePage() {
     );
   }
 
-  return <PeopleClient data={data as any} />;
+  return <PeopleClient data={data as any} onDataChange={fetchData} />;
 }

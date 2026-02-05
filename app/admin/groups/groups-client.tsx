@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { GroupDetailsModal } from "@/components/group-details-modal";
@@ -45,8 +44,7 @@ interface GroupsData {
   students: Student[];
 }
 
-export function GroupsClient({ data }: { data: GroupsData }) {
-  const router = useRouter();
+export function GroupsClient({ data, onDataChange }: { data: GroupsData; onDataChange: () => void }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<any>(null);
@@ -139,7 +137,7 @@ export function GroupsClient({ data }: { data: GroupsData }) {
         mentor_id: "",
         student_ids: [],
       });
-      router.refresh();
+      onDataChange();
     } catch (error) {
       console.error("Error saving group:", error);
     } finally {
@@ -167,7 +165,7 @@ export function GroupsClient({ data }: { data: GroupsData }) {
       await supabase.from("group_students").delete().eq("group_id", deleteGroupId);
       await supabase.from("groups").delete().eq("id", deleteGroupId);
       setDeleteGroupId(null);
-      router.refresh();
+      onDataChange();
     } catch (error) {
       console.error("Error deleting group:", error);
     } finally {

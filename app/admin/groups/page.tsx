@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { GroupsClient } from "./groups-client";
 
@@ -12,40 +12,40 @@ export default function GroupsPage() {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function getGroupsData() {
-      const [groupsRes, mentorsRes, studentsRes, groupStudentsRes] =
-        await Promise.all([
-          supabase.from("groups").select("*, mentor:mentors(*)"),
-          supabase.from("mentors").select("*"),
-          supabase.from("students").select("*").eq("status", "active"),
-          supabase.from("group_students").select("*"),
-        ]);
+  const fetchData = useCallback(async () => {
+    const [groupsRes, mentorsRes, studentsRes, groupStudentsRes] =
+      await Promise.all([
+        supabase.from("groups").select("*, mentor:mentors(*)"),
+        supabase.from("mentors").select("*"),
+        supabase.from("students").select("*").eq("status", "active"),
+        supabase.from("group_students").select("*"),
+      ]);
 
-      const groups = groupsRes.data || [];
-      const mentors = mentorsRes.data || [];
-      const students = studentsRes.data || [];
-      const groupStudents = groupStudentsRes.data || [];
+    const groups = groupsRes.data || [];
+    const mentors = mentorsRes.data || [];
+    const students = studentsRes.data || [];
+    const groupStudents = groupStudentsRes.data || [];
 
-      const groupsWithDetails = groups.map((group: any) => {
-        const studentIds = groupStudents
-          .filter((gs: any) => gs.group_id === group.id)
-          .map((gs: any) => gs.student_id);
-        const groupStudentList = students.filter((s: any) => studentIds.includes(s.id));
+    const groupsWithDetails = groups.map((group: any) => {
+      const studentIds = groupStudents
+        .filter((gs: any) => gs.group_id === group.id)
+        .map((gs: any) => gs.student_id);
+      const groupStudentList = students.filter((s: any) => studentIds.includes(s.id));
 
-        return {
-          ...group,
-          mentor: group.mentor || null,
-          students: groupStudentList,
-        };
-      });
+      return {
+        ...group,
+        mentor: group.mentor || null,
+        students: groupStudentList,
+      };
+    });
 
-      setData({ groups: groupsWithDetails, mentors, students });
-      setLoading(false);
-    }
-
-    getGroupsData();
+    setData({ groups: groupsWithDetails, mentors, students });
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   if (loading) {
     return (
@@ -55,5 +55,5 @@ export default function GroupsPage() {
     );
   }
 
-  return <GroupsClient data={data as any} />;
+  return <GroupsClient data={data as any} onDataChange={fetchData} />;
 }

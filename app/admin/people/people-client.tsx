@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
@@ -51,8 +50,7 @@ interface PeopleData {
   mentors: (Mentor & { groups?: any[] })[];
 }
 
-export function PeopleClient({ data }: { data: PeopleData }) {
-  const router = useRouter();
+export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataChange: () => void }) {
   const [studentSearch, setStudentSearch] = useState("");
   const [mentorSearch, setMentorSearch] = useState("");
   const [studentDialogOpen, setStudentDialogOpen] = useState(false);
@@ -114,7 +112,7 @@ export function PeopleClient({ data }: { data: PeopleData }) {
         english_level: "A1",
         status: "active",
       });
-      router.refresh();
+      onDataChange();
     } catch (error) {
       console.error("Error saving student:", error);
     } finally {
@@ -141,7 +139,7 @@ export function PeopleClient({ data }: { data: PeopleData }) {
       await supabase.from("group_students").delete().eq("student_id", deleteStudentId);
       await supabase.from("students").delete().eq("id", deleteStudentId);
       setDeleteStudentId(null);
-      router.refresh();
+      onDataChange();
     } catch (error) {
       console.error("Error deleting student:", error);
     } finally {
@@ -170,7 +168,7 @@ export function PeopleClient({ data }: { data: PeopleData }) {
         expertise_level: "intermediate",
         pin_code: "",
       });
-      router.refresh();
+      onDataChange();
     } catch (error) {
       console.error("Error saving mentor:", error);
     } finally {
@@ -197,7 +195,7 @@ export function PeopleClient({ data }: { data: PeopleData }) {
       await supabase.from("groups").update({ mentor_id: null }).eq("mentor_id", deleteMentorId);
       await supabase.from("mentors").delete().eq("id", deleteMentorId);
       setDeleteMentorId(null);
-      router.refresh();
+      onDataChange();
     } catch (error) {
       console.error("Error deleting mentor:", error);
     } finally {
