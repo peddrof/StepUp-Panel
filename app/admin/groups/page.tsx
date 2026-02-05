@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase-server";
 import { GroupsClient } from "./groups-client";
 
 async function getGroupsData() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const [groupsRes, mentorsRes, studentsRes, groupStudentsRes] =
     await Promise.all([
@@ -37,3 +37,6 @@ export default async function GroupsPage() {
   const data = await getGroupsData();
   return <GroupsClient data={data as any} />;
 }
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
