@@ -23,11 +23,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-
-      if (session) {
-        document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=3600; SameSite=Lax`;
-        document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=3600; SameSite=Lax`;
-      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -35,14 +30,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         (async () => {
           setUser(session?.user ?? null);
           setLoading(false);
-
-          if (session) {
-            document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=3600; SameSite=Lax`;
-            document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=3600; SameSite=Lax`;
-          } else {
-            document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-            document.cookie = 'sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-          }
         })();
       }
     );
@@ -65,8 +52,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    document.cookie = 'sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     router.push("/");
   };
 

@@ -1,25 +1,38 @@
-import { createServerClient } from "@/lib/supabase-server";
+"use client";
+
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 import { ClassLogsClient } from "./class-logs-client";
 
-async function getClassLogsData() {
-  const supabase = await createServerClient();
+export default function ClassLogsPage() {
+  const [data, setData] = useState<{ classLogs: any[] }>({ classLogs: [] });
+  const [loading, setLoading] = useState(true);
 
-  const { data: classLogs, error } = await supabase
-    .from("class_logs")
-    .select("*, group:groups(*, mentor:mentors(*))")
-    .order("date", { ascending: false });
+  useEffect(() => {
+    async function getClassLogsData() {
+      const { data: classLogs, error } = await supabase
+        .from("class_logs")
+        .select("*, group:groups(*, mentor:mentors(*))")
+        .order("date", { ascending: false });
 
-  if (error) {
-    console.error("Error fetching class logs:", error);
+      if (error) {
+        console.error("Error fetching class logs:", error);
+      }
+
+      setData({ classLogs: classLogs || [] });
+      setLoading(false);
+    }
+
+    getClassLogsData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
   }
 
-  return { classLogs: classLogs || [] };
-}
-
-export default async function ClassLogsPage() {
-  const data = await getClassLogsData();
   return <ClassLogsClient data={data as any} />;
 }
-
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;

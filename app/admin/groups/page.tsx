@@ -1,39 +1,59 @@
-import { createServerClient } from "@/lib/supabase-server";
+"use client";
+
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 import { GroupsClient } from "./groups-client";
 
-async function getGroupsData() {
-  const supabase = await createServerClient();
-
-  const [groupsRes, mentorsRes, studentsRes, groupStudentsRes] =
-    await Promise.all([
-      supabase.from("groups").select("*, mentor:mentors(*)"),
-      supabase.from("mentors").select("*"),
-      supabase.from("students").select("*").eq("status", "active"),
-      supabase.from("group_students").select("*"),
-    ]);
-
-  const groups = groupsRes.data || [];
-  const mentors = mentorsRes.data || [];
-  const students = studentsRes.data || [];
-  const groupStudents = groupStudentsRes.data || [];
-
-  const groupsWithDetails = groups.map((group: any) => {
-    const studentIds = groupStudents
-      .filter((gs: any) => gs.group_id === group.id)
-      .map((gs: any) => gs.student_id);
-    const groupStudentList = students.filter((s: any) => studentIds.includes(s.id));
-
-    return {
-      ...group,
-      mentor: group.mentor || null,
-      students: groupStudentList,
-    };
+export default function GroupsPage() {
+  const [data, setData] = useState<{ groups: any[]; mentors: any[]; students: any[] }>({
+    groups: [],
+    mentors: [],
+    students: [],
   });
+  const [loading, setLoading] = useState(true);
 
-  return { groups: groupsWithDetails, mentors, students };
-}
+  useEffect(() => {
+    async function getGroupsData() {
+      const [groupsRes, mentorsRes, studentsRes, groupStudentsRes] =
+        await Promise.all([
+          supabase.from("groups").select("*, mentor:mentors(*)"),
+          supabase.from("mentors").select("*"),
+          supabase.from("students").select("*").eq("status", "active"),
+          supabase.from("group_students").select("*"),
+        ]);
 
-export default async function GroupsPage() {
-  const data = await getGroupsData();
+      const groups = groupsRes.data || [];
+      const mentors = mentorsRes.data || [];
+      const students = studentsRes.data || [];
+      const groupStudents = groupStudentsRes.data || [];
+
+      const groupsWithDetails = groups.map((group: any) => {
+        const studentIds = groupStudents
+          .filter((gs: any) => gs.group_id === group.id)
+          .map((gs: any) => gs.student_id);
+        const groupStudentList = students.filter((s: any) => studentIds.includes(s.id));
+
+        return {
+          ...group,
+          mentor: group.mentor || null,
+          students: groupStudentList,
+        };
+      });
+
+      setData({ groups: groupsWithDetails, mentors, students });
+      setLoading(false);
+    }
+
+    getGroupsData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
+
   return <GroupsClient data={data as any} />;
 }
