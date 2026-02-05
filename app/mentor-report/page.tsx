@@ -295,13 +295,13 @@ export default function MentorReportPage() {
               <Input
                 id="pin"
                 type="password"
-                placeholder="Enter your 4-digit PIN"
+                placeholder="Enter your 8-digit PIN"
                 value={pinCode}
                 onChange={(e) => {
                   setPinCode(e.target.value);
                   setPinError(false);
                 }}
-                maxLength={4}
+                maxLength={8}
                 className={cn(pinError && "border-red-500")}
               />
               {pinError && (
