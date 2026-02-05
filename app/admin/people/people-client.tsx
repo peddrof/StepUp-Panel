@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
-import { GroupDetailsModal } from "@/components/group-details-modal";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,13 +51,12 @@ interface PeopleData {
 }
 
 export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataChange: () => void }) {
+  const router = useRouter();
   const [studentSearch, setStudentSearch] = useState("");
   const [mentorSearch, setMentorSearch] = useState("");
   const [studentDialogOpen, setStudentDialogOpen] = useState(false);
   const [mentorDialogOpen, setMentorDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState<any>(null);
-  const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [editingMentor, setEditingMentor] = useState<Mentor | null>(null);
   const [deleteStudentId, setDeleteStudentId] = useState<string | null>(null);
@@ -210,8 +209,7 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
   };
 
   const handleGroupClick = (group: any) => {
-    setSelectedGroup(group);
-    setGroupModalOpen(true);
+    router.push(`/admin/groups?group=${group.id}`);
   };
 
   return (
@@ -219,12 +217,6 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
       <PageHeader
         title="People"
         description="Manage students and mentors"
-      />
-
-      <GroupDetailsModal
-        group={selectedGroup}
-        open={groupModalOpen}
-        onOpenChange={setGroupModalOpen}
       />
 
       <Tabs defaultValue="students" className="space-y-6">
@@ -265,7 +257,7 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
               }}
             >
               <DialogTrigger asChild>
-                <Button className="bg-sky-800 hover:bg-sky-900">
+                <Button className="bg-sky-800 hover:bg-gray-200">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Student
                 </Button>
@@ -350,7 +342,7 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
                   <Button
                     onClick={handleCreateStudent}
                     disabled={loading}
-                    className="w-full bg-sky-800 hover:bg-sky-900"
+                    className="w-full bg-sky-800 hover:bg-gray-200"
                   >
                     {loading
                       ? editingStudent
@@ -371,7 +363,7 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
                 <TableHeader>
                   <TableRow className="bg-gray-50">
                     <TableHead className="font-semibold">Name</TableHead>
-                    <TableHead className="font-semibold">Groups</TableHead>
+                    <TableHead className="font-semibold">Group</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="font-semibold">Email</TableHead>
                     <TableHead className="font-semibold">Phone</TableHead>
@@ -389,7 +381,7 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
                               <Badge
                                 key={group.id}
                                 variant="outline"
-                                className="border-sky-800 text-sky-800 cursor-pointer hover:bg-sky-50"
+                                className="border-sky-800 text-sky-800 cursor-pointer hover:bg-gray-200"
                                 onClick={() => handleGroupClick(group)}
                               >
                                 {group.name}
@@ -444,7 +436,7 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0 hover:bg-sky-50 hover:text-sky-800"
+                            className="h-8 w-8 p-0 hover:bg-gray-200 hover:text-sky-800"
                             onClick={() => handleEditStudent(student)}
                           >
                             <Pencil className="h-4 w-4" />
@@ -495,7 +487,7 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
               }}
             >
               <DialogTrigger asChild>
-                <Button className="bg-sky-800 hover:bg-sky-900">
+                <Button className="bg-sky-800 hover:bg-gray-200">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Mentor
                 </Button>
@@ -574,7 +566,7 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
                   <Button
                     onClick={handleCreateMentor}
                     disabled={loading}
-                    className="w-full bg-sky-800 hover:bg-sky-900"
+                    className="w-full bg-sky-800 hover:bg-gray-200"
                   >
                     {loading
                       ? editingMentor
@@ -595,7 +587,7 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
                 <TableHeader>
                   <TableRow className="bg-gray-50">
                     <TableHead className="font-semibold">Name</TableHead>
-                    <TableHead className="font-semibold">Groups</TableHead>
+                    <TableHead className="font-semibold">Group</TableHead>
                     <TableHead className="font-semibold">Email</TableHead>
                     <TableHead className="font-semibold">Phone</TableHead>
                     <TableHead className="font-semibold w-24">Actions</TableHead>
@@ -612,7 +604,7 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
                               <Badge
                                 key={group.id}
                                 variant="outline"
-                                className="border-cyan-600 text-cyan-600 cursor-pointer hover:bg-cyan-50"
+                                className="border-cyan-600 text-cyan-600 cursor-pointer hover:bg-gray-200"
                                 onClick={() => handleGroupClick(group)}
                               >
                                 {group.name}
@@ -656,7 +648,7 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0 hover:bg-sky-50 hover:text-sky-800"
+                            className="h-8 w-8 p-0 hover:bg-gray-200 hover:text-sky-800"
                             onClick={() => handleEditMentor(mentor)}
                           >
                             <Pencil className="h-4 w-4" />

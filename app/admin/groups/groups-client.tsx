@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { GroupDetailsModal } from "@/components/group-details-modal";
@@ -44,7 +44,15 @@ interface GroupsData {
   students: Student[];
 }
 
-export function GroupsClient({ data, onDataChange }: { data: GroupsData; onDataChange: () => void }) {
+export function GroupsClient({ 
+  data, 
+  onDataChange,
+  initialGroupId 
+}: { 
+  data: GroupsData; 
+  onDataChange: () => void;
+  initialGroupId?: string | null;
+}) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<any>(null);
@@ -173,35 +181,46 @@ export function GroupsClient({ data, onDataChange }: { data: GroupsData; onDataC
     }
   };
 
+  useEffect(() => {
+    if (initialGroupId && data.groups.length > 0) {
+      const group = data.groups.find((g) => g.id === initialGroupId);
+      if (group) {
+        setSelectedGroup(group);
+        setGroupModalOpen(true);
+      }
+    }
+  }, [initialGroupId, data.groups]);
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <PageHeader
-          title="Groups"
-          description="Manage your class groups and enrollments"
-        />
-        <Dialog
-          open={open}
-          onOpenChange={(isOpen) => {
-            setOpen(isOpen);
-            if (!isOpen) {
-              setEditingGroup(null);
-              setFormData({
-                name: "",
-                level: "A1",
-                schedule_time: "",
-                mentor_id: "",
-                student_ids: [],
-              });
-            }
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button className="bg-sky-800 hover:bg-sky-900">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Group
-            </Button>
-          </DialogTrigger>
+      <div>
+        <div className="border-b border-gray-200 pb-5 mb-1">
+          <h1 className="text-2xl font-semibold text-gray-900">Groups</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage your class groups and enrollments</p>
+        </div>
+        <div className="flex justify-end mt-4">
+          <Dialog
+            open={open}
+            onOpenChange={(isOpen) => {
+              setOpen(isOpen);
+              if (!isOpen) {
+                setEditingGroup(null);
+                setFormData({
+                  name: "",
+                  level: "A1",
+                  schedule_time: "",
+                  mentor_id: "",
+                  student_ids: [],
+                });
+              }
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button className="bg-sky-800 hover:bg-gray-200">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Group
+              </Button>
+            </DialogTrigger>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>
@@ -306,7 +325,7 @@ export function GroupsClient({ data, onDataChange }: { data: GroupsData; onDataC
               <Button
                 onClick={handleSubmit}
                 disabled={loading}
-                className="w-full bg-sky-800 hover:bg-sky-900"
+                className="w-full bg-sky-800 hover:bg-gray-200"
               >
                 {loading
                   ? editingGroup
@@ -319,6 +338,7 @@ export function GroupsClient({ data, onDataChange }: { data: GroupsData; onDataC
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <GroupDetailsModal
@@ -348,7 +368,7 @@ export function GroupsClient({ data, onDataChange }: { data: GroupsData; onDataC
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 w-7 p-0 hover:bg-sky-50 hover:text-sky-800"
+                    className="h-7 w-7 p-0 hover:bg-gray-200 hover:text-sky-800"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleEditGroup(group);

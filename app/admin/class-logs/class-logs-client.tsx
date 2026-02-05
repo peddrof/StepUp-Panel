@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { Input } from "@/components/ui/input";
@@ -55,6 +56,7 @@ interface ClassLogsData {
 }
 
 export function ClassLogsClient({ data }: { data: ClassLogsData }) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [selectedLog, setSelectedLog] = useState<(typeof data.classLogs)[0] | null>(null);
 
@@ -111,14 +113,17 @@ export function ClassLogsClient({ data }: { data: ClassLogsData }) {
                     {format(new Date(log.date), "MMM d, yyyy")}
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span>{log.group?.name || "-"}</span>
-                      {log.group && (
-                        <Badge className="bg-cyan-500 text-white hover:bg-cyan-600 text-xs">
-                          {log.group.level}
-                        </Badge>
-                      )}
-                    </div>
+                    {log.group ? (
+                      <Badge
+                        variant="outline"
+                        className="border-sky-800 text-sky-800 cursor-pointer hover:bg-gray-200"
+                        onClick={() => log.group && router.push(`/admin/groups?group=${log.group.id}`)}
+                      >
+                        {log.group.name}
+                      </Badge>
+                    ) : (
+                      <span className="text-sm text-gray-500 italic">-</span>
+                    )}
                   </TableCell>
                   <TableCell className="max-w-xs truncate">{log.topic}</TableCell>
                   <TableCell className="text-gray-600">
@@ -136,7 +141,7 @@ export function ClassLogsClient({ data }: { data: ClassLogsData }) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-8 text-sky-800 hover:text-sky-900 hover:bg-sky-50"
+                          className="h-8 text-sky-800 hover:text-sky-900 hover:bg-gray-200"
                           onClick={() => setSelectedLog(log)}
                         >
                           <Eye className="h-4 w-4 mr-1" />

@@ -88,7 +88,7 @@ export default function LoginPage() {
             <CardFooter className="flex flex-col space-y-4">
               <Button
                 type="submit"
-                className="w-full bg-sky-800 hover:bg-sky-900"
+                className="w-full bg-sky-800 hover:bg-gray-200"
                 disabled={loading}
               >
                 {loading ? (

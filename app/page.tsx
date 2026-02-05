@@ -18,7 +18,7 @@ export default function Home() {
           </p>
           <div className="flex gap-4 justify-center">
             <Link href="/login">
-              <Button size="lg" className="bg-sky-800 hover:bg-sky-900">
+              <Button size="lg" className="bg-sky-800 hover:bg-gray-200">
                 Sign In
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -90,7 +90,7 @@ export default function Home() {
               Submit class reports quickly using your PIN code. No account needed.
             </p>
             <Link href="/mentor-report">
-              <Button variant="outline" className="border-sky-800 text-sky-800 hover:bg-sky-50">
+              <Button variant="outline" className="border-sky-800 text-sky-800 hover:bg-gray-200">
                 Go to Mentor Report
               </Button>
             </Link>

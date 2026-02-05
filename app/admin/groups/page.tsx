@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { GroupsClient } from "./groups-client";
 
 export default function GroupsPage() {
+  const searchParams = useSearchParams();
   const [data, setData] = useState<{ groups: any[]; mentors: any[]; students: any[] }>({
     groups: [],
     mentors: [],
@@ -55,5 +57,7 @@ export default function GroupsPage() {
     );
   }
 
-  return <GroupsClient data={data as any} onDataChange={fetchData} />;
+  const groupId = searchParams.get("group");
+
+  return <GroupsClient data={data as any} onDataChange={fetchData} initialGroupId={groupId} />;
 }

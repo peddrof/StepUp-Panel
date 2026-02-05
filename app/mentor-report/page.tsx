@@ -176,7 +176,7 @@ export default function MentorReportPage() {
                 setAttendance([]);
                 setPinCode("");
               }}
-              className="bg-sky-800 hover:bg-sky-900"
+              className="bg-sky-800 hover:bg-gray-200"
             >
               Submit Another Report
             </Button>
@@ -314,7 +314,7 @@ export default function MentorReportPage() {
               disabled={
                 submitting || !selectedGroupId || !selectedDate || !topic || !pinCode
               }
-              className="w-full bg-sky-800 hover:bg-sky-900"
+              className="w-full bg-sky-800 hover:bg-gray-200"
             >
               {submitting ? (
                 <>
