@@ -207,25 +207,6 @@ export function SettingsModal({ open, onOpenChange, defaultSection = "settings" 
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {activeSection === "settings" && (
-              <div className="p-4 md:p-6">
-                <h2 className="text-xl md:text-2xl font-semibold mb-6">Settings</h2>
-
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-base md:text-lg font-medium mb-4">Account</h3>
-                    <Button
-                      variant="outline"
-                      className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                      onClick={signOut}
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Sign Out
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {activeSection === "profile" && (
               <div className="p-4 md:p-6">
@@ -325,6 +306,25 @@ export function SettingsModal({ open, onOpenChange, defaultSection = "settings" 
                       ) : (
                         "Save Changes"
                       )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+            {activeSection === "settings" && (
+              <div className="p-4 md:p-6">
+                <h2 className="text-xl md:text-2xl font-semibold mb-6">Settings</h2>
+
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-base md:text-lg font-medium mb-4">Account</h3>
+                    <Button
+                      variant="outline"
+                      className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={signOut}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sign Out
                     </Button>
                   </div>
                 </div>
