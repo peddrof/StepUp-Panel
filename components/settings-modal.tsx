@@ -183,16 +183,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = "settings" 
               <DialogTitle className="text-lg">Menu</DialogTitle>
             </DialogHeader>
             <nav className="flex md:flex-col gap-1">
-              <button
-                onClick={() => setActiveSection("settings")}
-                className={`flex-1 md:w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                  activeSection === "settings"
-                    ? "bg-gray-200 text-black font-medium"
-                    : "text-gray-700 hover:bg-gray-100"
-                }`}
-              >
-                Settings
-              </button>
+              
               <button
                 onClick={() => setActiveSection("profile")}
                 className={`flex-1 md:w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
@@ -202,6 +193,16 @@ export function SettingsModal({ open, onOpenChange, defaultSection = "settings" 
                 }`}
               >
                 Profile
+              </button>
+              <button
+                onClick={() => setActiveSection("settings")}
+                className={`flex-1 md:w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                  activeSection === "settings"
+                    ? "bg-gray-200 text-black font-medium"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                Settings
               </button>
             </nav>
           </div>
