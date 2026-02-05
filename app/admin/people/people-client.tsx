@@ -147,16 +147,20 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
   };
 
   const handleCreateMentor = async () => {
-    if (!newMentor.name || !newMentor.email || !newMentor.pin_code) return;
+    if (!newMentor.name || !newMentor.pin_code) return;
     setLoading(true);
     try {
+      const payload = {
+        ...newMentor,
+        email: newMentor.email.trim() || null,
+      };
       if (editingMentor) {
         await supabase
           .from("mentors")
-          .update(newMentor as any)
+          .update(payload as any)
           .eq("id", editingMentor.id);
       } else {
-        await supabase.from("mentors").insert(newMentor as any);
+        await supabase.from("mentors").insert(payload as any);
       }
       setMentorDialogOpen(false);
       setEditingMentor(null);
@@ -180,7 +184,7 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
     setNewMentor({
       name: mentor.name,
       phone: mentor.phone || "",
-      email: mentor.email,
+      email: mentor.email ?? "",
       expertise_level: mentor.expertise_level,
       pin_code: mentor.pin_code,
     });
@@ -510,7 +514,7 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="mentor-email">Email</Label>
+                    <Label htmlFor="mentor-email">Email (optional)</Label>
                     <Input
                       id="mentor-email"
                       type="email"

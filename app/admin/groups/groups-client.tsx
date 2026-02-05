@@ -348,7 +348,9 @@ export function GroupsClient({
       />
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {data.groups.map((group) => (
+        {[...data.groups]
+          .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }))
+          .map((group) => (
           <Card key={group.id} className="border-gray-200 hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">

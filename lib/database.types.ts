@@ -41,7 +41,7 @@ export type Database = {
           id: string;
           name: string;
           phone: string | null;
-          email: string;
+          email: string | null;
           expertise_level: string;
           pin_code: string;
           created_at: string;
@@ -50,7 +50,7 @@ export type Database = {
           id?: string;
           name: string;
           phone?: string | null;
-          email: string;
+          email?: string | null;
           expertise_level?: string;
           pin_code?: string;
           created_at?: string;

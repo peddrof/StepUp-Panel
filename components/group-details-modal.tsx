@@ -21,7 +21,7 @@ interface GroupDetailsModalProps {
     mentor?: {
       id: string;
       name: string;
-      email: string;
+      email: string | null;
       phone: string | null;
       expertise_level: string;
     } | null;
@@ -102,12 +102,16 @@ export function GroupDetailsModal({
                   <div className="space-y-2">
                     <p className="font-medium text-gray-900">{group.mentor.name}</p>
                     <div className="flex flex-col gap-1 text-sm text-gray-600">
-                      <a
-                        href={`mailto:${group.mentor.email}`}
-                        className="text-sky-800 hover:underline"
-                      >
-                        {group.mentor.email}
-                      </a>
+                      {group.mentor.email ? (
+                        <a
+                          href={`mailto:${group.mentor.email}`}
+                          className="text-sky-800 hover:underline"
+                        >
+                          {group.mentor.email}
+                        </a>
+                      ) : (
+                        <span className="text-gray-500">No email</span>
+                      )}
                       {group.mentor.phone && (
                         <p className="text-gray-600">{group.mentor.phone}</p>
                       )}
