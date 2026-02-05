@@ -15,18 +15,24 @@ export type Database = {
           email: string;
           role: string;
           created_at: string;
+          display_name: string | null;
+          avatar_url: string | null;
         };
         Insert: {
           id: string;
           email: string;
           role?: string;
           created_at?: string;
+          display_name?: string | null;
+          avatar_url?: string | null;
         };
         Update: {
           id?: string;
           email?: string;
           role?: string;
           created_at?: string;
+          display_name?: string | null;
+          avatar_url?: string | null;
         };
         Relationships: [];
       };

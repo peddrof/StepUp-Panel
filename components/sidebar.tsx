@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { LayoutDashboard, Users, BookOpen, FileText, Settings, Search } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/auth-context";
 import { SettingsModal } from "@/components/settings-modal";
+import { supabase } from "@/lib/supabase";
 
 const mainNavItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -21,6 +22,33 @@ export function Sidebar() {
   const { user } = useAuth();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSection, setSettingsSection] = useState<"settings" | "profile">("settings");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string>("");
+
+  useEffect(() => {
+    loadProfile();
+  }, [user?.id]);
+
+  const loadProfile = async () => {
+    if (!user?.id) return;
+
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("avatar_url, display_name")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (data) {
+        setAvatarUrl(data.avatar_url);
+        setDisplayName(data.display_name || user.email?.split("@")[0] || "");
+      } else {
+        setDisplayName(user.email?.split("@")[0] || "Admin");
+      }
+    } catch (error) {
+      console.error("Error loading profile:", error);
+    }
+  };
 
   const getInitials = (email: string) => {
     return email.substring(0, 2).toUpperCase();
@@ -29,6 +57,13 @@ export function Sidebar() {
   const handleOpenSettings = (section: "settings" | "profile" = "settings") => {
     setSettingsSection(section);
     setSettingsOpen(true);
+  };
+
+  const handleModalClose = (open: boolean) => {
+    setSettingsOpen(open);
+    if (!open) {
+      loadProfile();
+    }
   };
 
   return (
@@ -88,13 +123,14 @@ export function Sidebar() {
             className="flex items-center gap-2 w-full rounded-md hover:bg-gray-100 p-1 transition-colors"
           >
             <Avatar className="h-7 w-7">
+              {avatarUrl && <AvatarImage src={avatarUrl} alt="Profile" />}
               <AvatarFallback className="bg-gray-300 text-gray-700 text-xs font-medium">
                 {user?.email ? getInitials(user.email) : "AD"}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0 text-left">
               <p className="text-xs font-medium text-gray-900 truncate">
-                {user?.email?.split("@")[0] || "Admin"}
+                {displayName || user?.email?.split("@")[0] || "Admin"}
               </p>
               <p className="text-xs text-gray-500 truncate">
                 {user?.email || "admin@stepup.org"}
@@ -106,7 +142,7 @@ export function Sidebar() {
 
       <SettingsModal
         open={settingsOpen}
-        onOpenChange={setSettingsOpen}
+        onOpenChange={handleModalClose}
         defaultSection={settingsSection}
       />
     </>
