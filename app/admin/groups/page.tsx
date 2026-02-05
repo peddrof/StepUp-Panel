@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase-server";
 import { GroupsClient } from "./groups-client";
 
 async function getGroupsData() {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   const [groupsRes, mentorsRes, studentsRes, groupStudentsRes] =
     await Promise.all([
