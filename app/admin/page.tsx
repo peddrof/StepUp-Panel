@@ -1,7 +1,9 @@
-import { supabase } from "@/lib/supabase";
+import { createServerClient } from "@/lib/supabase-server";
 import { DashboardClient } from "./dashboard-client";
 
 async function getDashboardData() {
+  const supabase = await createServerClient();
+
   const [studentsRes, mentorsRes, groupsRes, classLogsRes, groupStudentsRes] =
     await Promise.all([
       supabase.from("students").select("*"),
