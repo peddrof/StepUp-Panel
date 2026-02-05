@@ -1,7 +1,9 @@
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-server";
 import { GroupsClient } from "./groups-client";
 
 async function getGroupsData() {
+  const supabase = await createClient();
+
   const [groupsRes, mentorsRes, studentsRes, groupStudentsRes] =
     await Promise.all([
       supabase.from("groups").select("*, mentor:mentors(*)"),

@@ -1,7 +1,9 @@
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-server";
 import { PeopleClient } from "./people-client";
 
 async function getPeopleData() {
+  const supabase = await createClient();
+
   const [studentsRes, mentorsRes, groupsRes, groupStudentsRes] = await Promise.all([
     supabase.from("students").select("*").order("name"),
     supabase.from("mentors").select("*").order("name"),
