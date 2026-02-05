@@ -176,9 +176,9 @@ export function SettingsModal({ open, onOpenChange, defaultSection = "settings" 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] md:h-[600px] p-0 gap-0 b">
+      <DialogContent className="max-w-3xl max-h-[90vh] md:h-[600px] p-0 gap-0 overflow-hidden">
         <div className="flex flex-col md:flex-row h-full">
-          <div className="w-full md:w-48 bg-gray-50 border-b md:border-b-0 md:border-r border-gray-200 p-4">
+          <div className="w-full md:w-48 bg-gray-50 border-b md:border-b-0 md:border-r border-gray-200 p-4 md:rounded-tl-lg">
             <DialogHeader className="mb-4 md:mb-6">
               <DialogTitle className="text-lg">Menu</DialogTitle>
             </DialogHeader>
