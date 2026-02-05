@@ -1,9 +1,7 @@
-import { createClient } from "@/lib/supabase-server";
+import { supabase } from "@/lib/supabase";
 import { ClassLogsClient } from "./class-logs-client";
 
 async function getClassLogsData() {
-  const supabase = await createClient();
-
   const { data: classLogs, error } = await supabase
     .from("class_logs")
     .select("*, group:groups(*, mentor:mentors(*))")

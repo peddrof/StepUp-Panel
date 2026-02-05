@@ -1,9 +1,7 @@
-import { createClient } from "@/lib/supabase-server";
+import { supabase } from "@/lib/supabase";
 import { PeopleClient } from "./people-client";
 
 async function getPeopleData() {
-  const supabase = await createClient();
-
   const [studentsRes, mentorsRes, groupsRes, groupStudentsRes] = await Promise.all([
     supabase.from("students").select("*").order("name"),
     supabase.from("mentors").select("*").order("name"),
@@ -59,6 +57,3 @@ export default async function PeoplePage() {
   const data = await getPeopleData();
   return <PeopleClient data={data as any} />;
 }
-
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;

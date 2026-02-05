@@ -568,8 +568,8 @@ export function PeopleClient({ data }: { data: PeopleData }) {
                         onChange={(e) =>
                           setNewMentor((prev) => ({ ...prev, pin_code: e.target.value }))
                         }
-                        placeholder="8-digit PIN"
-                        maxLength={8}
+                        placeholder="4-digit PIN"
+                        maxLength={4}
                       />
                     </div>
                   </div>
