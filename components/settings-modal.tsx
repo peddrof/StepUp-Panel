@@ -51,11 +51,12 @@ export function SettingsModal({ open, onOpenChange, defaultSection = "settings" 
         const defaultName = user.email?.split("@")[0] || "";
         setDisplayName(defaultName);
 
-        await supabase.from("profiles").insert({
+        const { error: insertError } = await supabase.from("profiles").insert({
           id: user.id,
           email: user.email!,
           display_name: defaultName,
         });
+        if (insertError) throw insertError;
 
         setProfile({ display_name: defaultName, avatar_url: null });
       }

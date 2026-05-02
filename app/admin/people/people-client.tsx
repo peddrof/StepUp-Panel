@@ -97,12 +97,14 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
     setLoading(true);
     try {
       if (editingStudent) {
-        await supabase
+        const { error } = await supabase
           .from("students")
           .update(newStudent as any)
           .eq("id", editingStudent.id);
+        if (error) throw error;
       } else {
-        await supabase.from("students").insert(newStudent as any);
+        const { error } = await supabase.from("students").insert(newStudent as any);
+        if (error) throw error;
       }
       setStudentDialogOpen(false);
       setEditingStudent(null);
@@ -142,8 +144,18 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
     if (!deleteStudentId) return;
     setLoading(true);
     try {
-      await supabase.from("group_students").delete().eq("student_id", deleteStudentId);
-      await supabase.from("students").delete().eq("id", deleteStudentId);
+      const { error: gsError } = await supabase
+        .from("group_students")
+        .delete()
+        .eq("student_id", deleteStudentId);
+      if (gsError) throw gsError;
+
+      const { error: studentError } = await supabase
+        .from("students")
+        .delete()
+        .eq("id", deleteStudentId);
+      if (studentError) throw studentError;
+
       setDeleteStudentId(null);
       onDataChange();
     } catch (error) {
@@ -167,12 +179,14 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
         email: newMentor.email.trim() || null,
       };
       if (editingMentor) {
-        await supabase
+        const { error } = await supabase
           .from("mentors")
           .update(payload as any)
           .eq("id", editingMentor.id);
+        if (error) throw error;
       } else {
-        await supabase.from("mentors").insert(payload as any);
+        const { error } = await supabase.from("mentors").insert(payload as any);
+        if (error) throw error;
       }
       setMentorDialogOpen(false);
       setEditingMentor(null);
@@ -212,8 +226,18 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
     if (!deleteMentorId) return;
     setLoading(true);
     try {
-      await supabase.from("groups").update({ mentor_id: null }).eq("mentor_id", deleteMentorId);
-      await supabase.from("mentors").delete().eq("id", deleteMentorId);
+      const { error: unassignError } = await supabase
+        .from("groups")
+        .update({ mentor_id: null })
+        .eq("mentor_id", deleteMentorId);
+      if (unassignError) throw unassignError;
+
+      const { error: mentorError } = await supabase
+        .from("mentors")
+        .delete()
+        .eq("id", deleteMentorId);
+      if (mentorError) throw mentorError;
+
       setDeleteMentorId(null);
       onDataChange();
     } catch (error) {

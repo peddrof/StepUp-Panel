@@ -86,7 +86,7 @@ export function GroupsClient({
     setLoading(true);
     try {
       if (editingGroup) {
-        await supabase
+        const { error: updateError } = await supabase
           .from("groups")
           .update({
             name: formData.name,
@@ -95,17 +95,19 @@ export function GroupsClient({
             mentor_id: formData.mentor_id,
           } as any)
           .eq("id", editingGroup.id);
+        if (updateError) throw updateError;
 
         const existingStudentIds = editingGroup.students.map((s) => s.id);
         const toRemove = existingStudentIds.filter((id) => !formData.student_ids.includes(id));
         const toAdd = formData.student_ids.filter((id) => !existingStudentIds.includes(id));
 
         if (toRemove.length > 0) {
-          await supabase
+          const { error: removeError } = await supabase
             .from("group_students")
             .delete()
             .eq("group_id", editingGroup.id)
             .in("student_id", toRemove);
+          if (removeError) throw removeError;
         }
 
         if (toAdd.length > 0) {
@@ -113,7 +115,10 @@ export function GroupsClient({
             group_id: editingGroup.id,
             student_id: studentId,
           }));
-          await supabase.from("group_students").insert(groupStudentInserts as any);
+          const { error: addError } = await supabase
+            .from("group_students")
+            .insert(groupStudentInserts as any);
+          if (addError) throw addError;
         }
       } else {
         const { data: newGroup, error: groupError } = await supabase
@@ -135,8 +140,10 @@ export function GroupsClient({
             group_id: insertedGroup.id,
             student_id: studentId,
           }));
-
-          await supabase.from("group_students").insert(groupStudentInserts as any);
+          const { error: insertError } = await supabase
+            .from("group_students")
+            .insert(groupStudentInserts as any);
+          if (insertError) throw insertError;
         }
       }
 
@@ -181,15 +188,19 @@ export function GroupsClient({
     const deletedAt = new Date().toISOString();
     setLoading(true);
     try {
-      await supabase
+      const { error: classLogsError } = await supabase
         .from("class_logs")
         .update({ deleted_at: deletedAt } as any)
         .eq("group_id", groupPendingDelete.id)
         .is("deleted_at", null);
-      await supabase
+      if (classLogsError) throw classLogsError;
+
+      const { error: groupError } = await supabase
         .from("groups")
         .update({ deleted_at: deletedAt } as any)
         .eq("id", groupPendingDelete.id);
+      if (groupError) throw groupError;
+
       setGroupPendingDelete(null);
       setDeleteConfirmText("");
       onDataChange();
