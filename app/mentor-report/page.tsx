@@ -22,13 +22,11 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 
-interface GroupWithMentor {
+interface GroupSummary {
   id: string;
   name: string;
   level: string;
   schedule_time: string;
-  mentor_id: string | null;
-  mentor: { id: string; name: string; pin_code: string } | null;
 }
 
 interface Student {
@@ -37,7 +35,7 @@ interface Student {
 }
 
 export default function MentorReportPage() {
-  const [groups, setGroups] = useState<GroupWithMentor[]>([]);
+  const [groups, setGroups] = useState<GroupSummary[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -57,9 +55,10 @@ export default function MentorReportPage() {
     async function loadData() {
       const { data: groupsData } = await supabase
         .from("groups")
-        .select("*, mentor:mentors(*)");
+        .select("id, name, level, schedule_time")
+        .order("name");
 
-      setGroups((groupsData as any) || []);
+      setGroups((groupsData as GroupSummary[]) || []);
       setLoading(false);
     }
     loadData();
@@ -208,7 +207,7 @@ export default function MentorReportPage() {
                 <SelectContent>
                   {groups.map((group) => (
                     <SelectItem key={group.id} value={group.id}>
-                      {group.name} - {group.mentor?.name || "No mentor"}
+                      {group.name} — {group.level} · {group.schedule_time}
                     </SelectItem>
                   ))}
                 </SelectContent>
