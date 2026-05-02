@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { TrendingUp, TrendingDown, ArrowUpRight } from "lucide-react";
+import { subDays } from "date-fns";
 import {
   AreaChart,
   Area,
@@ -18,8 +20,11 @@ interface DashboardData {
   totalMentors: number;
   activeGroups: number;
   classesThisWeek: number;
-  attendanceChartData: Array<{ level: string; rate: number }>;
+  classLogs: any[];
+  groupStudents: any[];
 }
+
+type DateFilter = "7d" | "30d" | "90d";
 
 const kpiCards = [
   {
@@ -56,7 +61,53 @@ const kpiCards = [
   },
 ] as const;
 
+const filterOptions: Array<{ value: DateFilter; label: string; days: number }> = [
+  { value: "90d", label: "Last 3 months", days: 90 },
+  { value: "30d", label: "Last 30 days", days: 30 },
+  { value: "7d", label: "Last 7 days", days: 7 },
+];
+
 export function DashboardClient({ data }: { data: DashboardData }) {
+  const [activeFilter, setActiveFilter] = useState<DateFilter>("90d");
+
+  const attendanceChartData = useMemo(() => {
+    const option = filterOptions.find((f) => f.value === activeFilter)!;
+    const cutoff = subDays(new Date(), option.days);
+
+    const filtered = data.classLogs.filter(
+      (log: any) => new Date(log.date) >= cutoff
+    );
+
+    const byLevel: Record<string, { total: number; attended: number }> = {};
+
+    filtered.forEach((log: any) => {
+      const group = log.group as { level: string; id: string } | null;
+      if (!group) return;
+
+      const level = group.level;
+      const groupId = group.id;
+
+      const studentsInGroup = data.groupStudents.filter(
+        (gs: any) => gs.group_id === groupId
+      );
+      const totalStudents = studentsInGroup.length;
+      const attendedStudents = Array.isArray(log.attendance_data)
+        ? (log.attendance_data as string[]).length
+        : 0;
+
+      if (!byLevel[level]) byLevel[level] = { total: 0, attended: 0 };
+      byLevel[level].total += totalStudents;
+      byLevel[level].attended += attendedStudents;
+    });
+
+    return Object.entries(byLevel).map(([level, d]) => ({
+      level,
+      rate: d.total > 0 ? Math.round((d.attended / d.total) * 100) : 0,
+    }));
+  }, [data.classLogs, data.groupStudents, activeFilter]);
+
+  const activeOption = filterOptions.find((f) => f.value === activeFilter)!;
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -112,70 +163,80 @@ export function DashboardClient({ data }: { data: DashboardData }) {
                 Attendance Rate by Level
               </h3>
               <p className="text-sm text-gray-500 mt-0.5">
-                Total for the last 3 months
+                {activeOption.label}
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-900 rounded-md hover:bg-gray-100 transition-colors">
-                Last 3 months
-              </button>
-              <button className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-900 rounded-md hover:bg-gray-100 transition-colors">
-                Last 30 days
-              </button>
-              <button className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-900 rounded-md hover:bg-gray-100 transition-colors">
-                Last 7 days
-              </button>
+              {filterOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setActiveFilter(opt.value)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                    activeFilter === opt.value
+                      ? "bg-gray-200 text-gray-900"
+                      : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>
         <CardContent className="pt-6">
           <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={data.attendanceChartData}
-                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6b7280" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#6b7280" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
-                <XAxis
-                  dataKey="level"
-                  tick={{ fill: "#9ca3af", fontSize: 12 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fill: "#9ca3af", fontSize: 12 }}
-                  axisLine={false}
-                  tickLine={false}
-                  domain={[0, 100]}
-                  tickFormatter={(value) => `${value}%`}
-                />
-                <Tooltip
-                  formatter={(value: number) => [`${value}%`, "Attendance"]}
-                  contentStyle={{
-                    backgroundColor: "white",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "8px",
-                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                    fontSize: "12px",
-                  }}
-                  labelStyle={{ color: "#374151", fontWeight: 500 }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="rate"
-                  stroke="#6b7280"
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#colorRate)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            {attendanceChartData.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-sm text-gray-400">
+                No class data for this period
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={attendanceChartData}
+                  margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6b7280" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#6b7280" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+                  <XAxis
+                    dataKey="level"
+                    tick={{ fill: "#9ca3af", fontSize: 12 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fill: "#9ca3af", fontSize: 12 }}
+                    axisLine={false}
+                    tickLine={false}
+                    domain={[0, 100]}
+                    tickFormatter={(value) => `${value}%`}
+                  />
+                  <Tooltip
+                    formatter={(value: number) => [`${value}%`, "Attendance"]}
+                    contentStyle={{
+                      backgroundColor: "white",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                      fontSize: "12px",
+                    }}
+                    labelStyle={{ color: "#374151", fontWeight: 500 }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="rate"
+                    stroke="#6b7280"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorRate)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -12,7 +12,8 @@ interface DashboardData {
   totalMentors: number;
   activeGroups: number;
   classesThisWeek: number;
-  attendanceChartData: Array<{ level: string; rate: number }>;
+  classLogs: any[];
+  groupStudents: any[];
 }
 
 export default function DashboardPage() {
@@ -22,7 +23,8 @@ export default function DashboardPage() {
     totalMentors: 0,
     activeGroups: 0,
     classesThisWeek: 0,
-    attendanceChartData: [],
+    classLogs: [],
+    groupStudents: [],
   });
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -78,43 +80,13 @@ export default function DashboardPage() {
         return logDate >= weekStart && logDate <= weekEnd;
       });
 
-      const attendanceByLevel: Record<string, { total: number; attended: number }> = {};
-
-      classLogs.forEach((log: any) => {
-        const group = log.group as { level: string; id: string } | null;
-        if (!group) return;
-
-        const level = group.level;
-        const groupId = group.id;
-
-        const studentsInGroup = groupStudents.filter(
-          (gs: any) => gs.group_id === groupId
-        );
-        const totalStudents = studentsInGroup.length;
-        const attendedStudents = Array.isArray(log.attendance_data)
-          ? (log.attendance_data as string[]).length
-          : 0;
-
-        if (!attendanceByLevel[level]) {
-          attendanceByLevel[level] = { total: 0, attended: 0 };
-        }
-        attendanceByLevel[level].total += totalStudents;
-        attendanceByLevel[level].attended += attendedStudents;
-      });
-
-      const attendanceChartData = Object.entries(attendanceByLevel).map(
-        ([level, data]) => ({
-          level,
-          rate: data.total > 0 ? Math.round((data.attended / data.total) * 100) : 0,
-        })
-      );
-
       setData({
         totalStudents: students.length,
         totalMentors: mentors.length,
         activeGroups: groups.length,
         classesThisWeek: classesThisWeek.length,
-        attendanceChartData,
+        classLogs,
+        groupStudents,
       });
       setLoading(false);
     }

@@ -415,6 +415,7 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
                     <TableHead className="font-semibold">Name</TableHead>
                     <TableHead className="font-semibold">Group</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="font-semibold">Attendance</TableHead>
                     <TableHead className="font-semibold">Email</TableHead>
                     <TableHead className="font-semibold">Phone</TableHead>
                     <TableHead className="font-semibold w-24">Actions</TableHead>
@@ -452,6 +453,11 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
                         >
                           {student.status}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-600">
+                        {(student as any).totalClasses > 0
+                          ? `${(student as any).attendedClasses}/${(student as any).totalClasses}`
+                          : "—"}
                       </TableCell>
                       <TableCell>
                         {student.email ? (

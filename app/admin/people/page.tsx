@@ -12,17 +12,19 @@ export default function PeoplePage() {
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
-    const [studentsRes, mentorsRes, groupsRes, groupStudentsRes] = await Promise.all([
+    const [studentsRes, mentorsRes, groupsRes, groupStudentsRes, classLogsRes] = await Promise.all([
       supabase.from("students").select("*").order("name"),
       supabase.from("mentors").select("*").order("name"),
       supabase.from("groups").select("*, mentor:mentors(*)").is("deleted_at", null),
       supabase.from("group_students").select("*"),
+      supabase.from("class_logs").select("group_id, attendance_data").is("deleted_at", null),
     ]);
 
     const students = studentsRes.data || [];
     const mentors = mentorsRes.data || [];
     const groups = groupsRes.data || [];
     const groupStudents = groupStudentsRes.data || [];
+    const classLogs = classLogsRes.data || [];
 
     const studentsWithGroups = students.map((student: any) => {
       const studentGroupIds = groupStudents
@@ -30,9 +32,21 @@ export default function PeoplePage() {
         .map((gs: any) => gs.group_id);
       const studentGroups = groups.filter((g: any) => studentGroupIds.includes(g.id));
 
+      const studentLogs = classLogs.filter((log: any) =>
+        studentGroupIds.includes(log.group_id)
+      );
+      const totalClasses = studentLogs.length;
+      const attendedClasses = studentLogs.filter(
+        (log: any) =>
+          Array.isArray(log.attendance_data) &&
+          (log.attendance_data as string[]).includes(student.id)
+      ).length;
+
       return {
         ...student,
         groups: studentGroups,
+        totalClasses,
+        attendedClasses,
       };
     });
 

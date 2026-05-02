@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Clock, User, Users, Calendar } from "lucide-react";
 import { format } from "date-fns";
+import { supabase } from "@/lib/supabase";
+
+interface ClassLog {
+  id: string;
+  date: string;
+  attendance_data: unknown;
+}
 
 interface GroupDetailsModalProps {
   group: {
@@ -43,7 +51,31 @@ export function GroupDetailsModal({
   open,
   onOpenChange,
 }: GroupDetailsModalProps) {
+  const [classLogs, setClassLogs] = useState<ClassLog[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open || !group?.id) {
+      setClassLogs([]);
+      return;
+    }
+
+    setLogsLoading(true);
+    supabase
+      .from("class_logs")
+      .select("id, date, attendance_data")
+      .eq("group_id", group.id)
+      .is("deleted_at", null)
+      .order("date", { ascending: true })
+      .then(({ data }) => {
+        setClassLogs((data as ClassLog[]) || []);
+        setLogsLoading(false);
+      });
+  }, [open, group?.id]);
+
   if (!group) return null;
+
+  const students = group.students || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -130,11 +162,11 @@ export function GroupDetailsModal({
           <div>
             <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
               <Users className="h-4 w-4" />
-              Students ({group.students?.length || 0})
+              Students ({students.length})
             </h3>
-            {group.students && group.students.length > 0 ? (
+            {students.length > 0 ? (
               <div className="space-y-2">
-                {group.students.map((student) => (
+                {students.map((student) => (
                   <Card key={student.id} className="border-gray-200">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
@@ -173,6 +205,82 @@ export function GroupDetailsModal({
               </div>
             ) : (
               <p className="text-sm text-gray-500 italic">No students enrolled</p>
+            )}
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Attendance
+            </h3>
+            {logsLoading ? (
+              <p className="text-sm text-gray-400">Loading...</p>
+            ) : classLogs.length === 0 ? (
+              <p className="text-sm text-gray-500 italic">No classes recorded yet</p>
+            ) : students.length === 0 ? (
+              <p className="text-sm text-gray-500 italic">No students enrolled</p>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border border-gray-200">
+                <table className="text-sm w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="sticky left-0 z-10 bg-gray-50 text-left font-medium text-gray-700 px-3 py-2 min-w-[140px] border-r border-gray-200">
+                        Student
+                      </th>
+                      {classLogs.map((log) => (
+                        <th
+                          key={log.id}
+                          className="text-center font-medium text-gray-500 px-2 py-2 min-w-[52px] whitespace-nowrap"
+                        >
+                          {format(new Date(log.date + "T00:00:00"), "MMM d")}
+                        </th>
+                      ))}
+                      <th className="text-center font-semibold text-gray-700 px-3 py-2 min-w-[52px] border-l border-gray-200">
+                        Total
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {students.map((student, i) => {
+                      const attended = classLogs.filter(
+                        (log) =>
+                          Array.isArray(log.attendance_data) &&
+                          (log.attendance_data as string[]).includes(student.id)
+                      ).length;
+                      return (
+                        <tr
+                          key={student.id}
+                          className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                        >
+                          <td
+                            className="sticky left-0 z-10 font-medium text-gray-900 px-3 py-2 border-r border-gray-200 whitespace-nowrap"
+                            style={{ backgroundColor: i % 2 === 0 ? "white" : "#f9fafb" }}
+                          >
+                            {student.name}
+                          </td>
+                          {classLogs.map((log) => {
+                            const present =
+                              Array.isArray(log.attendance_data) &&
+                              (log.attendance_data as string[]).includes(student.id);
+                            return (
+                              <td key={log.id} className="text-center px-2 py-2">
+                                {present ? (
+                                  <span className="text-green-600 font-bold">✓</span>
+                                ) : (
+                                  <span className="text-gray-300">·</span>
+                                )}
+                              </td>
+                            );
+                          })}
+                          <td className="text-center px-3 py-2 font-medium text-gray-700 border-l border-gray-200">
+                            {attended}/{classLogs.length}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
 
