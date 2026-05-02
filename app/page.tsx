@@ -14,7 +14,7 @@ export default function Home() {
             StepUp Admin OS
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            A comprehensive management system for educational programs. Track students, manage groups, monitor attendance, and gain insights into your program's performance.
+            A comprehensive management system for educational programs. Track students, manage groups, monitor attendance, and gain insights into your program&apos;s performance.
           </p>
           <div className="flex gap-4 justify-center">
             <Link href="/login">
