@@ -15,7 +15,7 @@ export default function PeoplePage() {
     const [studentsRes, mentorsRes, groupsRes, groupStudentsRes] = await Promise.all([
       supabase.from("students").select("*").order("name"),
       supabase.from("mentors").select("*").order("name"),
-      supabase.from("groups").select("*, mentor:mentors(*)"),
+      supabase.from("groups").select("*, mentor:mentors(*)").is("deleted_at", null),
       supabase.from("group_students").select("*"),
     ]);
 

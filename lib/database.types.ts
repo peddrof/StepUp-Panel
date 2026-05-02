@@ -104,6 +104,7 @@ export type Database = {
           schedule_time: string;
           mentor_id: string | null;
           created_at: string;
+          deleted_at: string | null;
         };
         Insert: {
           id?: string;
@@ -112,6 +113,7 @@ export type Database = {
           schedule_time: string;
           mentor_id?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
         };
         Update: {
           id?: string;
@@ -120,6 +122,7 @@ export type Database = {
           schedule_time?: string;
           mentor_id?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
         };
         Relationships: [
           {
@@ -176,6 +179,7 @@ export type Database = {
           attendance_data: Json;
           notes: string | null;
           created_at: string;
+          deleted_at: string | null;
         };
         Insert: {
           id?: string;
@@ -185,6 +189,7 @@ export type Database = {
           attendance_data?: Json;
           notes?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
         };
         Update: {
           id?: string;
@@ -194,6 +199,7 @@ export type Database = {
           attendance_data?: Json;
           notes?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
         };
         Relationships: [
           {

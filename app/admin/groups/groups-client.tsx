@@ -58,7 +58,9 @@ export function GroupsClient({
   const [selectedGroup, setSelectedGroup] = useState<any>(null);
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<GroupWithDetails | null>(null);
-  const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
+  const [groupPendingDelete, setGroupPendingDelete] =
+    useState<{ id: string; name: string } | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     level: "A1",
@@ -166,13 +168,23 @@ export function GroupsClient({
   };
 
   const handleDeleteGroup = async () => {
-    if (!deleteGroupId) return;
+    if (!groupPendingDelete) return;
+    if (deleteConfirmText !== groupPendingDelete.name) return;
+
+    const deletedAt = new Date().toISOString();
     setLoading(true);
     try {
-      await supabase.from("class_logs").delete().eq("group_id", deleteGroupId);
-      await supabase.from("group_students").delete().eq("group_id", deleteGroupId);
-      await supabase.from("groups").delete().eq("id", deleteGroupId);
-      setDeleteGroupId(null);
+      await supabase
+        .from("class_logs")
+        .update({ deleted_at: deletedAt } as any)
+        .eq("group_id", groupPendingDelete.id)
+        .is("deleted_at", null);
+      await supabase
+        .from("groups")
+        .update({ deleted_at: deletedAt } as any)
+        .eq("id", groupPendingDelete.id);
+      setGroupPendingDelete(null);
+      setDeleteConfirmText("");
       onDataChange();
     } catch (error) {
       console.error("Error deleting group:", error);
@@ -384,7 +396,8 @@ export function GroupsClient({
                     className="h-7 w-7 p-0 hover:bg-red-50 hover:text-red-600"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setDeleteGroupId(group.id);
+                      setGroupPendingDelete({ id: group.id, name: group.name });
+                      setDeleteConfirmText("");
                     }}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -433,19 +446,41 @@ export function GroupsClient({
         ))}
       </div>
 
-      <AlertDialog open={!!deleteGroupId} onOpenChange={() => setDeleteGroupId(null)}>
+      <AlertDialog
+        open={!!groupPendingDelete}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setGroupPendingDelete(null);
+            setDeleteConfirmText("");
+          }
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Group</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this group? This will also remove all class logs associated with this group. This action cannot be undone.
+              This hides the group and its class logs from all views. The records are preserved and can be restored by clearing <code className="font-mono text-xs">deleted_at</code> in the database. To confirm, type the group name below:
+              <span className="block mt-2 font-medium text-gray-900">
+                {groupPendingDelete?.name}
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <Input
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            placeholder="Type group name"
+            autoFocus
+          />
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteGroup}
-              className="bg-red-600 hover:bg-red-700"
+              disabled={
+                loading ||
+                !groupPendingDelete ||
+                deleteConfirmText !== groupPendingDelete.name
+              }
+              className="bg-red-600 hover:bg-red-700 disabled:bg-red-300"
             >
               Delete
             </AlertDialogAction>

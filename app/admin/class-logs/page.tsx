@@ -13,6 +13,7 @@ export default function ClassLogsPage() {
       const { data: classLogs, error } = await supabase
         .from("class_logs")
         .select("*, group:groups(*, mentor:mentors(*))")
+        .is("deleted_at", null)
         .order("date", { ascending: false });
 
       if (error) {

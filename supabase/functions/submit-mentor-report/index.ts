@@ -45,8 +45,9 @@ Deno.serve(async (req: Request) => {
 
     const { data: group, error: groupError } = await supabase
       .from("groups")
-      .select("id, mentor_id, mentor:mentors(id, pin_code)")
+      .select("id, mentor_id, deleted_at, mentor:mentors(id, pin_code)")
       .eq("id", group_id)
+      .is("deleted_at", null)
       .maybeSingle();
 
     if (groupError || !group) {

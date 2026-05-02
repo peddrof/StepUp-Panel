@@ -17,7 +17,7 @@ export default function GroupsPage() {
   const fetchData = useCallback(async () => {
     const [groupsRes, mentorsRes, studentsRes, groupStudentsRes] =
       await Promise.all([
-        supabase.from("groups").select("*, mentor:mentors(*)"),
+        supabase.from("groups").select("*, mentor:mentors(*)").is("deleted_at", null),
         supabase.from("mentors").select("*"),
         supabase.from("students").select("*").eq("status", "active"),
         supabase.from("group_students").select("*"),

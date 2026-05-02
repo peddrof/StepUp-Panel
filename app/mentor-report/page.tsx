@@ -56,6 +56,7 @@ export default function MentorReportPage() {
       const { data: groupsData } = await supabase
         .from("groups")
         .select("id, name, level, schedule_time")
+        .is("deleted_at", null)
         .order("name");
 
       setGroups((groupsData as GroupSummary[]) || []);

@@ -28,8 +28,11 @@ export default function DashboardPage() {
         await Promise.all([
           supabase.from("students").select("*"),
           supabase.from("mentors").select("*"),
-          supabase.from("groups").select("*"),
-          supabase.from("class_logs").select("*, group:groups(*, mentor:mentors(*))"),
+          supabase.from("groups").select("*").is("deleted_at", null),
+          supabase
+            .from("class_logs")
+            .select("*, group:groups(*, mentor:mentors(*))")
+            .is("deleted_at", null),
           supabase.from("group_students").select("*, student:students(*), group:groups(*)"),
         ]);
 
