@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { DashboardClient } from "./dashboard-client";
+import { useToast } from "@/hooks/use-toast";
+import { AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface DashboardData {
   totalStudents: number;
@@ -13,6 +16,7 @@ interface DashboardData {
 }
 
 export default function DashboardPage() {
+  const { toast } = useToast();
   const [data, setData] = useState<DashboardData>({
     totalStudents: 0,
     totalMentors: 0,
@@ -21,9 +25,11 @@ export default function DashboardPage() {
     attendanceChartData: [],
   });
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     async function getDashboardData() {
+      setFetchError(null);
       const [studentsRes, mentorsRes, groupsRes, classLogsRes, groupStudentsRes] =
         await Promise.all([
           supabase.from("students").select("*"),
@@ -35,6 +41,25 @@ export default function DashboardPage() {
             .is("deleted_at", null),
           supabase.from("group_students").select("*, student:students(*), group:groups(*)"),
         ]);
+
+      const firstError =
+        studentsRes.error ||
+        mentorsRes.error ||
+        groupsRes.error ||
+        classLogsRes.error ||
+        groupStudentsRes.error;
+
+      if (firstError) {
+        console.error("Dashboard fetch failed:", firstError);
+        setFetchError(firstError.message);
+        toast({
+          title: "Could not load dashboard",
+          description: firstError.message,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
 
       const students = studentsRes.data || [];
       const mentors = mentorsRes.data || [];
@@ -95,12 +120,27 @@ export default function DashboardPage() {
     }
 
     getDashboardData();
-  }, []);
+  }, [toast]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-3 text-center px-4">
+        <AlertCircle className="h-8 w-8 text-red-500" />
+        <div>
+          <div className="font-medium text-gray-900">Could not load dashboard</div>
+          <div className="text-sm text-gray-500 mt-1">{fetchError}</div>
+        </div>
+        <Button variant="outline" onClick={() => window.location.reload()}>
+          Retry
+        </Button>
       </div>
     );
   }

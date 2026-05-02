@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { Student, Mentor } from "@/lib/database.types";
 import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 
 interface PeopleData {
   students: (Student & { groups?: any[] })[];
@@ -52,6 +53,7 @@ interface PeopleData {
 
 export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataChange: () => void }) {
   const router = useRouter();
+  const { toast } = useToast();
   const [studentSearch, setStudentSearch] = useState("");
   const [mentorSearch, setMentorSearch] = useState("");
   const [studentDialogOpen, setStudentDialogOpen] = useState(false);
@@ -114,6 +116,11 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
       onDataChange();
     } catch (error) {
       console.error("Error saving student:", error);
+      toast({
+        title: "Could not save student",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -141,6 +148,11 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
       onDataChange();
     } catch (error) {
       console.error("Error deleting student:", error);
+      toast({
+        title: "Could not delete student",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -174,6 +186,11 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
       onDataChange();
     } catch (error) {
       console.error("Error saving mentor:", error);
+      toast({
+        title: "Could not save mentor",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -201,6 +218,11 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
       onDataChange();
     } catch (error) {
       console.error("Error deleting mentor:", error);
+      toast({
+        title: "Could not delete mentor",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

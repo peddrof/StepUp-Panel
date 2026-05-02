@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { GroupWithDetails, Mentor, Student } from "@/lib/database.types";
 import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 
 interface GroupsData {
   groups: GroupWithDetails[];
@@ -53,6 +54,7 @@ export function GroupsClient({
   onDataChange: () => void;
   initialGroupId?: string | null;
 }) {
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<any>(null);
@@ -150,6 +152,11 @@ export function GroupsClient({
       onDataChange();
     } catch (error) {
       console.error("Error saving group:", error);
+      toast({
+        title: "Could not save group",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -188,6 +195,11 @@ export function GroupsClient({
       onDataChange();
     } catch (error) {
       console.error("Error deleting group:", error);
+      toast({
+        title: "Could not delete group",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

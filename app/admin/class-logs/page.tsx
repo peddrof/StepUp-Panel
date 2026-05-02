@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { ClassLogsClient } from "./class-logs-client";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ClassLogsPage() {
+  const { toast } = useToast();
   const [data, setData] = useState<{ classLogs: any[] }>({ classLogs: [] });
   const [loading, setLoading] = useState(true);
 
@@ -18,6 +20,11 @@ export default function ClassLogsPage() {
 
       if (error) {
         console.error("Error fetching class logs:", error);
+        toast({
+          title: "Could not load class logs",
+          description: error.message,
+          variant: "destructive",
+        });
       }
 
       setData({ classLogs: classLogs || [] });
@@ -25,7 +32,7 @@ export default function ClassLogsPage() {
     }
 
     getClassLogsData();
-  }, []);
+  }, [toast]);
 
   if (loading) {
     return (

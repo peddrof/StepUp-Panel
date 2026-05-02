@@ -21,6 +21,7 @@ import { CalendarIcon, CheckCircle2, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 
 interface GroupSummary {
   id: string;
@@ -35,6 +36,7 @@ interface Student {
 }
 
 export default function MentorReportPage() {
+  const { toast } = useToast();
   const [groups, setGroups] = useState<GroupSummary[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
@@ -140,6 +142,11 @@ export default function MentorReportPage() {
       setSubmitted(true);
     } catch (error) {
       console.error("Error submitting report:", error);
+      toast({
+        title: "Could not submit report",
+        description: error instanceof Error ? error.message : "Please check your connection and try again.",
+        variant: "destructive",
+      });
     } finally {
       setSubmitting(false);
     }
