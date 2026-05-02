@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -25,11 +25,7 @@ export function Sidebar() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>("");
 
-  useEffect(() => {
-    loadProfile();
-  }, [user?.id]);
-
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     if (!user?.id) return;
 
     try {
@@ -48,7 +44,11 @@ export function Sidebar() {
     } catch (error) {
       console.error("Error loading profile:", error);
     }
-  };
+  }, [user?.id, user?.email]);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
 
   const getInitials = (email: string) => {
     return email.substring(0, 2).toUpperCase();

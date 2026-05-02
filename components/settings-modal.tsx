@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,14 +32,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = "settings" 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (open) {
-      setActiveSection(defaultSection);
-      loadProfile();
-    }
-  }, [open, defaultSection]);
-
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     if (!user?.id) return;
 
     try {
@@ -69,7 +62,14 @@ export function SettingsModal({ open, onOpenChange, defaultSection = "settings" 
     } catch (error) {
       console.error("Error loading profile:", error);
     }
-  };
+  }, [user?.id, user?.email]);
+
+  useEffect(() => {
+    if (open) {
+      setActiveSection(defaultSection);
+      loadProfile();
+    }
+  }, [open, defaultSection, loadProfile]);
 
   const handlePhotoClick = () => {
     fileInputRef.current?.click();
