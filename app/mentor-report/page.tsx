@@ -112,11 +112,14 @@ export default function MentorReportPage() {
 
     try {
       const apiUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/submit-mentor-report`;
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${anonKey}`,
+          apikey: anonKey,
         },
         body: JSON.stringify({
           group_id: selectedGroupId,
@@ -128,15 +131,15 @@ export default function MentorReportPage() {
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        if (response.status === 401 || data.error === "Invalid PIN code") {
+        if (response.status === 401 && data.error === "Invalid PIN code") {
           setPinError(true);
           setSubmitting(false);
           return;
         }
-        throw new Error(data.error || "Failed to submit report");
+        throw new Error(data.error || `Submit failed (HTTP ${response.status})`);
       }
 
       setSubmitted(true);
