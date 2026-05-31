@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { buildRiskMap, type StudentRiskRow } from "@/lib/attendance";
+import { DashboardSkeleton } from "@/components/skeletons";
 
 interface DashboardData {
   totalStudents: number;
@@ -118,11 +119,7 @@ export default function DashboardPage() {
   }, [toast]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading...</div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (fetchError) {

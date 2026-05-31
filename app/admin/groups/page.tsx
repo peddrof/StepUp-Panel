@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { GroupsClient } from "./groups-client";
+import { GroupsSkeleton } from "@/components/skeletons";
 
 export default function GroupsPage() {
   const searchParams = useSearchParams();
@@ -50,11 +51,7 @@ export default function GroupsPage() {
   }, [fetchData]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading...</div>
-      </div>
-    );
+    return <GroupsSkeleton />;
   }
 
   const groupId = searchParams.get("group");

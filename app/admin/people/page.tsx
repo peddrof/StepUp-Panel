@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { attendedCount, buildRiskMap, type StudentRiskRow } from "@/lib/attendance";
 import { PeopleClient } from "./people-client";
+import { PeopleSkeleton } from "@/components/skeletons";
 
 export default function PeoplePage() {
   const [data, setData] = useState<{ students: any[]; mentors: any[] }>({
@@ -83,21 +84,11 @@ export default function PeoplePage() {
   }, [fetchData]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading...</div>
-      </div>
-    );
+    return <PeopleSkeleton />;
   }
 
   return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center h-64">
-          <div className="text-gray-500">Loading...</div>
-        </div>
-      }
-    >
+    <Suspense fallback={<PeopleSkeleton />}>
       <PeopleClient data={data as any} onDataChange={fetchData} />
     </Suspense>
   );

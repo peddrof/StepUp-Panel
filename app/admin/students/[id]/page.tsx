@@ -10,6 +10,7 @@ import { ArrowLeft, Mail, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { AttendanceMatrix } from "@/components/attendance-matrix";
 import { RiskBadge } from "@/components/risk-badge";
+import { StudentDetailSkeleton } from "@/components/skeletons";
 import {
   attendedCount,
   attendanceRate,
@@ -96,11 +97,7 @@ export default function StudentDetailPage() {
   }, [fetchData]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading...</div>
-      </div>
-    );
+    return <StudentDetailSkeleton />;
   }
 
   if (!student) {
