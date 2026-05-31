@@ -24,7 +24,8 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Clock, User, Users, Pencil, Trash2 } from "lucide-react";
+import { Combobox } from "@/components/ui/combobox";
+import { Plus, Clock, User, Users, Pencil, Trash2, Search } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -70,6 +71,17 @@ export function GroupsClient({
     mentor_id: "",
     student_ids: [] as string[],
   });
+  const [studentSearch, setStudentSearch] = useState("");
+
+  const byName = (a: { name: string }, b: { name: string }) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+  const mentorOptions = [...data.mentors]
+    .sort(byName)
+    .map((m) => ({ value: m.id, label: m.name }));
+  const sortedStudents = [...data.students].sort(byName);
+  const visibleStudents = sortedStudents.filter((s) =>
+    s.name.toLowerCase().includes(studentSearch.toLowerCase())
+  );
 
   const handleStudentToggle = (studentId: string) => {
     setFormData((prev) => ({
@@ -240,6 +252,7 @@ export function GroupsClient({
               setOpen(isOpen);
               if (!isOpen) {
                 setEditingGroup(null);
+                setStudentSearch("");
                 setFormData({
                   name: "",
                   level: "A1",
@@ -311,49 +324,62 @@ export function GroupsClient({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="mentor">Mentor</Label>
-                <Select
+                <Combobox
+                  options={mentorOptions}
                   value={formData.mentor_id}
-                  onValueChange={(value) =>
+                  onChange={(value) =>
                     setFormData((prev) => ({ ...prev, mentor_id: value }))
                   }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a mentor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {data.mentors.map((mentor) => (
-                      <SelectItem key={mentor.id} value={mentor.id}>
-                        {mentor.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Select a mentor"
+                  searchPlaceholder="Search mentors..."
+                  emptyText="No mentors found."
+                />
               </div>
               <div className="space-y-2">
-                <Label>Students</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Students</Label>
+                  <span className="text-xs text-gray-500">
+                    {formData.student_ids.length} selected
+                  </span>
+                </div>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search students..."
+                    value={studentSearch}
+                    onChange={(e) => setStudentSearch(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
                 <ScrollArea className="h-48 border rounded-lg p-3">
                   <div className="space-y-2">
-                    {data.students.map((student) => (
-                      <div
-                        key={student.id}
-                        className="flex items-center space-x-2"
-                      >
-                        <Checkbox
-                          id={student.id}
-                          checked={formData.student_ids.includes(student.id)}
-                          onCheckedChange={() => handleStudentToggle(student.id)}
-                        />
-                        <label
-                          htmlFor={student.id}
-                          className="text-sm font-medium leading-none cursor-pointer flex-1"
+                    {visibleStudents.length === 0 ? (
+                      <p className="px-1 py-2 text-sm text-gray-400">
+                        No students found.
+                      </p>
+                    ) : (
+                      visibleStudents.map((student) => (
+                        <div
+                          key={student.id}
+                          className="flex items-center space-x-2"
                         >
-                          {student.name}
-                          <span className="text-gray-500 ml-2 text-xs">
-                            ({student.english_level})
-                          </span>
-                        </label>
-                      </div>
-                    ))}
+                          <Checkbox
+                            id={student.id}
+                            checked={formData.student_ids.includes(student.id)}
+                            onCheckedChange={() => handleStudentToggle(student.id)}
+                          />
+                          <label
+                            htmlFor={student.id}
+                            className="text-sm font-medium leading-none cursor-pointer flex-1"
+                          >
+                            {student.name}
+                            <span className="text-gray-500 ml-2 text-xs">
+                              ({student.english_level})
+                            </span>
+                          </label>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </ScrollArea>
               </div>
@@ -380,6 +406,10 @@ export function GroupsClient({
         group={selectedGroup}
         open={groupModalOpen}
         onOpenChange={setGroupModalOpen}
+        onEdit={() => {
+          setGroupModalOpen(false);
+          if (selectedGroup) handleEditGroup(selectedGroup);
+        }}
       />
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

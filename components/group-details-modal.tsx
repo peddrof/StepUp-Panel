@@ -8,8 +8,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Clock, User, Users, Calendar } from "lucide-react";
+import { Clock, User, Users, Calendar, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/lib/supabase";
 import { AttendanceMatrix } from "@/components/attendance-matrix";
@@ -45,12 +46,14 @@ interface GroupDetailsModalProps {
   } | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEdit?: () => void;
 }
 
 export function GroupDetailsModal({
   group,
   open,
   onOpenChange,
+  onEdit,
 }: GroupDetailsModalProps) {
   const [classLogs, setClassLogs] = useState<ClassLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -82,9 +85,22 @@ export function GroupDetailsModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-semibold">
-            {group.name}
-          </DialogTitle>
+          <div className="flex items-center justify-between gap-4 pr-8">
+            <DialogTitle className="text-2xl font-semibold">
+              {group.name}
+            </DialogTitle>
+            {onEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onEdit}
+                className="gap-1.5 border-sky-800 text-sky-800 hover:bg-gray-100"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit group
+              </Button>
+            )}
+          </div>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
