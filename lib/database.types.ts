@@ -180,6 +180,8 @@ export type Database = {
           notes: string | null;
           created_at: string;
           deleted_at: string | null;
+          homework: string | null;
+          attendance_detail: Json | null;
         };
         Insert: {
           id?: string;
@@ -190,6 +192,8 @@ export type Database = {
           notes?: string | null;
           created_at?: string;
           deleted_at?: string | null;
+          homework?: string | null;
+          attendance_detail?: Json | null;
         };
         Update: {
           id?: string;
@@ -200,6 +204,8 @@ export type Database = {
           notes?: string | null;
           created_at?: string;
           deleted_at?: string | null;
+          homework?: string | null;
+          attendance_detail?: Json | null;
         };
         Relationships: [
           {
@@ -212,8 +218,31 @@ export type Database = {
         ];
       };
     };
-    Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Views: {
+      student_attendance_stats: {
+        Row: {
+          student_id: string;
+          group_id: string;
+          total_sessions: number;
+          attended_sessions: number;
+        };
+        Relationships: [];
+      };
+    };
+    Functions: {
+      get_student_risk: {
+        Args: Record<string, never>;
+        Returns: {
+          student_id: string;
+          group_id: string;
+          total_sessions: number;
+          attended_sessions: number;
+          attendance_rate: number | null;
+          recent_absences: number;
+          is_at_risk: boolean;
+        }[];
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

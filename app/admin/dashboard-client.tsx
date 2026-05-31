@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
-import { TrendingUp, TrendingDown, ArrowUpRight } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { subDays } from "date-fns";
 import {
   AreaChart,
@@ -15,6 +17,13 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+export interface AtRiskStudent {
+  id: string;
+  name: string;
+  groupName: string | null;
+  label: string | null;
+}
+
 interface DashboardData {
   totalStudents: number;
   totalMentors: number;
@@ -22,44 +31,10 @@ interface DashboardData {
   classesThisWeek: number;
   classLogs: any[];
   groupStudents: any[];
+  atRiskStudents: AtRiskStudent[];
 }
 
 type DateFilter = "7d" | "30d" | "90d";
-
-const kpiCards = [
-  {
-    key: "totalStudents",
-    label: "Total Students",
-    trend: "+12.5%",
-    trendUp: true,
-    subtitle: "Growing steadily",
-    description: "Enrollment exceeds targets",
-  },
-  {
-    key: "totalMentors",
-    label: "Total Mentors",
-    trend: "+8.2%",
-    trendUp: true,
-    subtitle: "Stable recruitment",
-    description: "Strong mentor retention",
-  },
-  {
-    key: "activeGroups",
-    label: "Active Groups",
-    trend: "+15.3%",
-    trendUp: true,
-    subtitle: "Expanding capacity",
-    description: "New groups launched",
-  },
-  {
-    key: "classesThisWeek",
-    label: "Classes This Week",
-    trend: "-5%",
-    trendUp: false,
-    subtitle: "Below average",
-    description: "Holiday period impact",
-  },
-] as const;
 
 const filterOptions: Array<{ value: DateFilter; label: string; days: number }> = [
   { value: "90d", label: "Last 3 months", days: 90 },
@@ -70,7 +45,7 @@ const filterOptions: Array<{ value: DateFilter; label: string; days: number }> =
 export function DashboardClient({ data }: { data: DashboardData }) {
   const [activeFilter, setActiveFilter] = useState<DateFilter>("90d");
 
-  const attendanceChartData = useMemo(() => {
+  const attendance = useMemo(() => {
     const option = filterOptions.find((f) => f.value === activeFilter)!;
     const cutoff = subDays(new Date(), option.days);
 
@@ -79,34 +54,53 @@ export function DashboardClient({ data }: { data: DashboardData }) {
     );
 
     const byLevel: Record<string, { total: number; attended: number }> = {};
+    let programTotal = 0;
+    let programAttended = 0;
 
     filtered.forEach((log: any) => {
       const group = log.group as { level: string; id: string } | null;
       if (!group) return;
 
-      const level = group.level;
-      const groupId = group.id;
-
-      const studentsInGroup = data.groupStudents.filter(
-        (gs: any) => gs.group_id === groupId
-      );
-      const totalStudents = studentsInGroup.length;
+      const totalStudents = data.groupStudents.filter(
+        (gs: any) => gs.group_id === group.id
+      ).length;
       const attendedStudents = Array.isArray(log.attendance_data)
         ? (log.attendance_data as string[]).length
         : 0;
 
-      if (!byLevel[level]) byLevel[level] = { total: 0, attended: 0 };
-      byLevel[level].total += totalStudents;
-      byLevel[level].attended += attendedStudents;
+      if (!byLevel[group.level]) byLevel[group.level] = { total: 0, attended: 0 };
+      byLevel[group.level].total += totalStudents;
+      byLevel[group.level].attended += attendedStudents;
+
+      programTotal += totalStudents;
+      programAttended += attendedStudents;
     });
 
-    return Object.entries(byLevel).map(([level, d]) => ({
+    const chart = Object.entries(byLevel).map(([level, d]) => ({
       level,
       rate: d.total > 0 ? Math.round((d.attended / d.total) * 100) : 0,
     }));
+
+    return {
+      chart,
+      programRate:
+        programTotal > 0
+          ? Math.round((programAttended / programTotal) * 100)
+          : null,
+    };
   }, [data.classLogs, data.groupStudents, activeFilter]);
 
   const activeOption = filterOptions.find((f) => f.value === activeFilter)!;
+
+  const kpiCards = [
+    { label: "Total Students", value: data.totalStudents.toLocaleString() },
+    { label: "Total Mentors", value: data.totalMentors.toLocaleString() },
+    { label: "Active Groups", value: data.activeGroups.toLocaleString() },
+    {
+      label: `Attendance · ${activeOption.label}`,
+      value: attendance.programRate === null ? "—" : `${attendance.programRate}%`,
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -117,43 +111,72 @@ export function DashboardClient({ data }: { data: DashboardData }) {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpiCards.map((card) => (
-          <Card key={card.key} className="border-gray-200 shadow-sm">
+          <Card key={card.label} className="border-gray-200 shadow-sm">
             <CardContent className="p-5">
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                    {card.label}
-                  </span>
-                  <div
-                    className={`flex items-center gap-0.5 text-xs font-medium ${
-                      card.trendUp ? "text-green-600" : "text-red-600"
-                    }`}
-                  >
-                    {card.trendUp ? (
-                      <TrendingUp className="h-3 w-3" />
-                    ) : (
-                      <TrendingDown className="h-3 w-3" />
-                    )}
-                    <span>{card.trend}</span>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-3xl font-semibold text-gray-900">
-                    {data[card.key].toLocaleString()}
-                  </p>
-                </div>
-                <div className="pt-2 border-t border-gray-100">
-                  <div className="flex items-center gap-1 text-xs text-gray-900 font-medium mb-0.5">
-                    <span>{card.subtitle}</span>
-                    <ArrowUpRight className="h-3 w-3 text-gray-400" />
-                  </div>
-                  <p className="text-xs text-gray-500">{card.description}</p>
-                </div>
+                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  {card.label}
+                </span>
+                <p className="text-3xl font-semibold text-gray-900">
+                  {card.value}
+                </p>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      <Card className="border-gray-200 shadow-sm">
+        <div className="p-6 pb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-red-500" />
+            <h3 className="text-base font-semibold text-gray-900">
+              Needs attention
+            </h3>
+          </div>
+          {data.atRiskStudents.length > 0 && (
+            <Badge className="bg-red-100 text-red-700 hover:bg-red-100">
+              {data.atRiskStudents.length}
+            </Badge>
+          )}
+        </div>
+        <CardContent className="pt-0">
+          {data.atRiskStudents.length === 0 ? (
+            <p className="text-sm text-gray-400">
+              No students currently flagged.
+            </p>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {data.atRiskStudents.map((s) => (
+                <Link
+                  key={s.id}
+                  href={`/admin/students/${s.id}`}
+                  className="-mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-2.5 transition-colors hover:bg-gray-50"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="truncate font-medium text-gray-900">
+                      {s.name}
+                    </span>
+                    {s.groupName && (
+                      <Badge
+                        variant="outline"
+                        className="shrink-0 border-sky-800 text-sky-800"
+                      >
+                        {s.groupName}
+                      </Badge>
+                    )}
+                  </div>
+                  {s.label && (
+                    <span className="shrink-0 text-sm text-red-600">
+                      {s.label}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="border-gray-200 shadow-sm">
         <div className="p-6 pb-0">
@@ -185,14 +208,14 @@ export function DashboardClient({ data }: { data: DashboardData }) {
         </div>
         <CardContent className="pt-6">
           <div className="h-80">
-            {attendanceChartData.length === 0 ? (
+            {attendance.chart.length === 0 ? (
               <div className="h-full flex items-center justify-center text-sm text-gray-400">
                 No class data for this period
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
-                  data={attendanceChartData}
+                  data={attendance.chart}
                   margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
                 >
                   <defs>

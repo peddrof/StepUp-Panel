@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { DashboardClient } from "./dashboard-client";
+import { DashboardClient, type AtRiskStudent } from "./dashboard-client";
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { buildRiskMap, type StudentRiskRow } from "@/lib/attendance";
 
 interface DashboardData {
   totalStudents: number;
@@ -14,6 +15,7 @@ interface DashboardData {
   classesThisWeek: number;
   classLogs: any[];
   groupStudents: any[];
+  atRiskStudents: AtRiskStudent[];
 }
 
 export default function DashboardPage() {
@@ -25,6 +27,7 @@ export default function DashboardPage() {
     classesThisWeek: 0,
     classLogs: [],
     groupStudents: [],
+    atRiskStudents: [],
   });
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -32,7 +35,7 @@ export default function DashboardPage() {
   useEffect(() => {
     async function getDashboardData() {
       setFetchError(null);
-      const [studentsRes, mentorsRes, groupsRes, classLogsRes, groupStudentsRes] =
+      const [studentsRes, mentorsRes, groupsRes, classLogsRes, groupStudentsRes, riskRes] =
         await Promise.all([
           supabase.from("students").select("*"),
           supabase.from("mentors").select("*"),
@@ -42,6 +45,7 @@ export default function DashboardPage() {
             .select("*, group:groups(*, mentor:mentors(*))")
             .is("deleted_at", null),
           supabase.from("group_students").select("*, student:students(*), group:groups(*)"),
+          supabase.rpc("get_student_risk"),
         ]);
 
       const firstError =
@@ -49,7 +53,8 @@ export default function DashboardPage() {
         mentorsRes.error ||
         groupsRes.error ||
         classLogsRes.error ||
-        groupStudentsRes.error;
+        groupStudentsRes.error ||
+        riskRes.error;
 
       if (firstError) {
         console.error("Dashboard fetch failed:", firstError);
@@ -80,6 +85,23 @@ export default function DashboardPage() {
         return logDate >= weekStart && logDate <= weekEnd;
       });
 
+      const riskMap = buildRiskMap((riskRes.data as StudentRiskRow[]) || []);
+      const atRiskStudents: AtRiskStudent[] = [];
+      riskMap.forEach((risk, studentId) => {
+        const student = students.find((s: any) => s.id === studentId);
+        if (!risk.atRisk || !student || student.status !== "active") return;
+        const group = risk.groupId
+          ? groups.find((g: any) => g.id === risk.groupId)
+          : null;
+        atRiskStudents.push({
+          id: studentId,
+          name: student.name,
+          groupName: group ? group.name : null,
+          label: risk.label,
+        });
+      });
+      atRiskStudents.sort((a, b) => a.name.localeCompare(b.name));
+
       setData({
         totalStudents: students.length,
         totalMentors: mentors.length,
@@ -87,6 +109,7 @@ export default function DashboardPage() {
         classesThisWeek: classesThisWeek.length,
         classLogs,
         groupStudents,
+        atRiskStudents,
       });
       setLoading(false);
     }

@@ -8,10 +8,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Clock, User, Users, Calendar } from "lucide-react";
+import { Clock, User, Users, Calendar, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/lib/supabase";
+import { AttendanceMatrix } from "@/components/attendance-matrix";
 
 interface ClassLog {
   id: string;
@@ -44,12 +46,14 @@ interface GroupDetailsModalProps {
   } | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEdit?: () => void;
 }
 
 export function GroupDetailsModal({
   group,
   open,
   onOpenChange,
+  onEdit,
 }: GroupDetailsModalProps) {
   const [classLogs, setClassLogs] = useState<ClassLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -81,9 +85,22 @@ export function GroupDetailsModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-semibold">
-            {group.name}
-          </DialogTitle>
+          <div className="flex items-center justify-between gap-4 pr-8">
+            <DialogTitle className="text-2xl font-semibold">
+              {group.name}
+            </DialogTitle>
+            {onEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onEdit}
+                className="gap-1.5 border-sky-800 text-sky-800 hover:bg-gray-100"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit group
+              </Button>
+            )}
+          </div>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
@@ -215,72 +232,8 @@ export function GroupDetailsModal({
             </h3>
             {logsLoading ? (
               <p className="text-sm text-gray-400">Loading...</p>
-            ) : classLogs.length === 0 ? (
-              <p className="text-sm text-gray-500 italic">No classes recorded yet</p>
-            ) : students.length === 0 ? (
-              <p className="text-sm text-gray-500 italic">No students enrolled</p>
             ) : (
-              <div className="overflow-x-auto rounded-lg border border-gray-200">
-                <table className="text-sm w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="sticky left-0 z-10 bg-gray-50 text-left font-medium text-gray-700 px-3 py-2 min-w-[140px] border-r border-gray-200">
-                        Student
-                      </th>
-                      {classLogs.map((log) => (
-                        <th
-                          key={log.id}
-                          className="text-center font-medium text-gray-500 px-2 py-2 min-w-[52px] whitespace-nowrap"
-                        >
-                          {format(new Date(log.date + "T00:00:00"), "MMM d")}
-                        </th>
-                      ))}
-                      <th className="text-center font-semibold text-gray-700 px-3 py-2 min-w-[52px] border-l border-gray-200">
-                        Total
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {students.map((student, i) => {
-                      const attended = classLogs.filter(
-                        (log) =>
-                          Array.isArray(log.attendance_data) &&
-                          (log.attendance_data as string[]).includes(student.id)
-                      ).length;
-                      return (
-                        <tr
-                          key={student.id}
-                          className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                        >
-                          <td
-                            className="sticky left-0 z-10 font-medium text-gray-900 px-3 py-2 border-r border-gray-200 whitespace-nowrap"
-                            style={{ backgroundColor: i % 2 === 0 ? "white" : "#f9fafb" }}
-                          >
-                            {student.name}
-                          </td>
-                          {classLogs.map((log) => {
-                            const present =
-                              Array.isArray(log.attendance_data) &&
-                              (log.attendance_data as string[]).includes(student.id);
-                            return (
-                              <td key={log.id} className="text-center px-2 py-2">
-                                {present ? (
-                                  <span className="text-green-600 font-bold">✓</span>
-                                ) : (
-                                  <span className="text-gray-300">·</span>
-                                )}
-                              </td>
-                            );
-                          })}
-                          <td className="text-center px-3 py-2 font-medium text-gray-700 border-l border-gray-200">
-                            {attended}/{classLogs.length}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <AttendanceMatrix students={students} logs={classLogs} />
             )}
           </div>
 
