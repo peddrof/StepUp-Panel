@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
@@ -61,7 +61,15 @@ interface PeopleData {
 
 export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataChange: () => void }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
+  const [tab, setTab] = useState(
+    searchParams.get("tab") === "mentors" ? "mentors" : "students"
+  );
+  useEffect(() => {
+    const t = searchParams.get("tab");
+    if (t === "mentors" || t === "students") setTab(t);
+  }, [searchParams]);
   const [studentSearch, setStudentSearch] = useState("");
   const [mentorSearch, setMentorSearch] = useState("");
   const [showOnlyAtRisk, setShowOnlyAtRisk] = useState(false);
@@ -271,7 +279,7 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
   const formatWhatsAppLink = (phone: string | null) => {
     if (!phone) return null;
     const cleaned = phone.replace(/\D/g, "");
-    return `https://wa.me/${cleaned}`;
+    return cleaned ? `https://wa.me/${cleaned}` : null;
   };
 
   const handleGroupClick = (group: any) => {
@@ -285,7 +293,7 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
         description="Manage students and mentors"
       />
 
-      <Tabs defaultValue="students" className="space-y-6">
+      <Tabs value={tab} onValueChange={setTab} className="space-y-6">
         <TabsList className="bg-gray-100">
           <TabsTrigger value="students" className="data-[state=active]:bg-white">
             Students ({data.students.length})
@@ -524,9 +532,9 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
                         )}
                       </TableCell>
                       <TableCell>
-                        {student.phone ? (
+                        {formatWhatsAppLink(student.phone) ? (
                           <a
-                            href={formatWhatsAppLink(student.phone) || "#"}
+                            href={formatWhatsAppLink(student.phone)!}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-green-600 hover:text-green-700"
@@ -534,6 +542,11 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
                             <MessageCircle className="h-4 w-4" />
                             {student.phone}
                           </a>
+                        ) : student.phone ? (
+                          <span className="inline-flex items-center gap-1 text-gray-600">
+                            <MessageCircle className="h-4 w-4" />
+                            {student.phone}
+                          </span>
                         ) : (
                           "-"
                         )}
@@ -736,9 +749,9 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
                         )}
                       </TableCell>
                       <TableCell>
-                        {mentor.phone ? (
+                        {formatWhatsAppLink(mentor.phone) ? (
                           <a
-                            href={formatWhatsAppLink(mentor.phone) || "#"}
+                            href={formatWhatsAppLink(mentor.phone)!}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-green-600 hover:text-green-700"
@@ -746,6 +759,11 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
                             <MessageCircle className="h-4 w-4" />
                             {mentor.phone}
                           </a>
+                        ) : mentor.phone ? (
+                          <span className="inline-flex items-center gap-1 text-gray-600">
+                            <MessageCircle className="h-4 w-4" />
+                            {mentor.phone}
+                          </span>
                         ) : (
                           "-"
                         )}

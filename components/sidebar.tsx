@@ -17,7 +17,7 @@ const mainNavItems = [
   { href: "/admin/class-logs", label: "Classes", icon: FileText },
 ];
 
-export function Sidebar() {
+export function Sidebar({ onSearchClick }: { onSearchClick?: () => void }) {
   const pathname = usePathname();
   const { user } = useAuth();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -102,11 +102,14 @@ export function Sidebar() {
 
         <div className="border-t border-gray-200 p-2 space-y-0.5 flex-shrink-0">
           <button
-            onClick={() => {}}
+            onClick={onSearchClick}
             className="flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 w-full transition-colors"
           >
             <Search className="h-4 w-4 flex-shrink-0" />
             <span>Search</span>
+            <kbd className="ml-auto text-[10px] font-medium text-gray-400 border border-gray-200 rounded px-1 py-0.5">
+              ⌘K
+            </kbd>
           </button>
           <button
             onClick={() => handleOpenSettings("settings")}

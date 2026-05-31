@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { attendedCount, buildRiskMap, type StudentRiskRow } from "@/lib/attendance";
 import { PeopleClient } from "./people-client";
@@ -90,5 +90,15 @@ export default function PeoplePage() {
     );
   }
 
-  return <PeopleClient data={data as any} onDataChange={fetchData} />;
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center h-64">
+          <div className="text-gray-500">Loading...</div>
+        </div>
+      }
+    >
+      <PeopleClient data={data as any} onDataChange={fetchData} />
+    </Suspense>
+  );
 }
