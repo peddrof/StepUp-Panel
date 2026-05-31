@@ -23,9 +23,9 @@ export default function Home() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
-            <Link href="/mentor-report">
+            <Link href="/mentor">
               <Button size="lg" variant="outline">
-                Submit Mentor Report
+                Mentor Portal
               </Button>
             </Link>
           </div>
@@ -90,19 +90,12 @@ export default function Home() {
               Sign in with your PIN to see your groups, attendance, and class
               history — and submit class reports. No account needed.
             </p>
-            <div className="flex gap-3 justify-center">
-              <Link href="/mentor">
-                <Button className="bg-sky-800 hover:bg-gray-200">
-                  Open Mentor Portal
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href="/mentor-report">
-                <Button variant="outline" className="border-sky-800 text-sky-800 hover:bg-gray-200">
-                  Quick Report
-                </Button>
-              </Link>
-            </div>
+            <Link href="/mentor">
+              <Button className="bg-sky-800 hover:bg-gray-200">
+                Open Mentor Portal
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
