@@ -112,8 +112,8 @@ export default function LoginPage() {
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
             Are you a mentor?{" "}
-            <Link href="/mentor-report" className="text-sky-800 hover:underline font-medium">
-              Submit a class report
+            <Link href="/mentor" className="text-sky-800 hover:underline font-medium">
+              Go to the Mentor Portal
             </Link>
           </p>
         </div>

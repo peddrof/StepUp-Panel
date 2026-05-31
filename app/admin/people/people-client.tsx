@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Plus, MessageCircle, Mail, Pencil, Trash2 } from "lucide-react";
+import { Search, Plus, MessageCircle, Mail, Pencil, Trash2, AlertTriangle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,11 +44,18 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { Student, Mentor } from "@/lib/database.types";
+import type { StudentRisk } from "@/lib/attendance";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { RiskBadge } from "@/components/risk-badge";
 
 interface PeopleData {
-  students: (Student & { groups?: any[] })[];
+  students: (Student & {
+    groups?: any[];
+    risk?: StudentRisk;
+    totalClasses?: number;
+    attendedClasses?: number;
+  })[];
   mentors: (Mentor & { groups?: any[] })[];
 }
 
@@ -56,6 +64,7 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
   const { toast } = useToast();
   const [studentSearch, setStudentSearch] = useState("");
   const [mentorSearch, setMentorSearch] = useState("");
+  const [showOnlyAtRisk, setShowOnlyAtRisk] = useState(false);
   const [studentDialogOpen, setStudentDialogOpen] = useState(false);
   const [mentorDialogOpen, setMentorDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -80,11 +89,18 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
     pin_code: "",
   });
 
-  const filteredStudents = data.students.filter(
-    (s) =>
+  const atRiskCount = data.students.filter(
+    (s) => s.status === "active" && s.risk?.atRisk
+  ).length;
+
+  const filteredStudents = data.students.filter((s) => {
+    const matchesSearch =
       s.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
-      s.english_level.toLowerCase().includes(studentSearch.toLowerCase())
-  );
+      s.english_level.toLowerCase().includes(studentSearch.toLowerCase());
+    const matchesRisk =
+      !showOnlyAtRisk || (s.status === "active" && s.risk?.atRisk);
+    return matchesSearch && matchesRisk;
+  });
 
   const filteredMentors = data.mentors.filter(
     (m) =>
@@ -281,14 +297,31 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
 
         <TabsContent value="students" className="space-y-4">
           <div className="flex items-center justify-between gap-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search students..."
-                value={studentSearch}
-                onChange={(e) => setStudentSearch(e.target.value)}
-                className="pl-10"
-              />
+            <div className="flex items-center gap-3 flex-1">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search students..."
+                  value={studentSearch}
+                  onChange={(e) => setStudentSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowOnlyAtRisk((v) => !v)}
+                aria-pressed={showOnlyAtRisk}
+                className={
+                  showOnlyAtRisk
+                    ? "gap-1.5 bg-red-600 text-white hover:bg-red-700"
+                    : "gap-1.5 text-red-600 border-red-200 hover:bg-red-50"
+                }
+              >
+                <AlertTriangle className="h-4 w-4" />
+                At risk{atRiskCount > 0 ? ` (${atRiskCount})` : ""}
+              </Button>
             </div>
             <Dialog
               open={studentDialogOpen}
@@ -415,6 +448,7 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
                     <TableHead className="font-semibold">Name</TableHead>
                     <TableHead className="font-semibold">Group</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="font-semibold">Risk</TableHead>
                     <TableHead className="font-semibold">Attendance</TableHead>
                     <TableHead className="font-semibold">Email</TableHead>
                     <TableHead className="font-semibold">Phone</TableHead>
@@ -423,8 +457,18 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
                 </TableHeader>
                 <TableBody>
                   {filteredStudents.map((student) => (
-                    <TableRow key={student.id}>
-                      <TableCell className="font-medium">{student.name}</TableCell>
+                    <TableRow
+                      key={student.id}
+                      className={student.status === "inactive" ? "opacity-60" : undefined}
+                    >
+                      <TableCell className="font-medium">
+                        <Link
+                          href={`/admin/students/${student.id}`}
+                          className="text-sky-800 hover:underline"
+                        >
+                          {student.name}
+                        </Link>
+                      </TableCell>
                       <TableCell>
                         {student.groups && student.groups.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
@@ -453,6 +497,13 @@ export function PeopleClient({ data, onDataChange }: { data: PeopleData; onDataC
                         >
                           {student.status}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {student.status === "active" && student.risk?.atRisk ? (
+                          <RiskBadge label={student.risk.label} />
+                        ) : (
+                          <span className="text-sm text-gray-300">—</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-sm text-gray-600">
                         {(student as any).totalClasses > 0

@@ -34,6 +34,8 @@ interface ClassLogsData {
     topic: string;
     attendance_data: unknown;
     notes: string | null;
+    homework: string | null;
+    attendance_detail: unknown;
     created_at: string;
     group: {
       id: string;
@@ -53,6 +55,32 @@ interface ClassLogsData {
       } | null;
     } | null;
   }>;
+}
+
+function StatusBreakdown({ detail }: { detail: unknown }) {
+  if (!Array.isArray(detail)) return null;
+  const counts = { present: 0, late: 0, absent: 0 };
+  detail.forEach((d: any) => {
+    if (d?.status === "present" || d?.status === "late" || d?.status === "absent") {
+      counts[d.status as "present" | "late" | "absent"] += 1;
+    }
+  });
+  return (
+    <div>
+      <p className="text-sm font-medium text-gray-500">Attendance breakdown</p>
+      <div className="flex gap-2 mt-1">
+        <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+          {counts.present} present
+        </Badge>
+        <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">
+          {counts.late} late
+        </Badge>
+        <Badge className="bg-gray-100 text-gray-600 hover:bg-gray-100">
+          {counts.absent} absent
+        </Badge>
+      </div>
+    </div>
+  );
 }
 
 export function ClassLogsClient({ data }: { data: ClassLogsData }) {
@@ -185,6 +213,17 @@ export function ClassLogsClient({ data }: { data: ClassLogsData }) {
                             <p className="text-sm font-medium text-gray-500">Topic</p>
                             <p className="text-sm text-gray-900">{log.topic}</p>
                           </div>
+                          <StatusBreakdown detail={log.attendance_detail} />
+                          {log.homework && (
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">
+                                Homework
+                              </p>
+                              <p className="text-sm text-gray-900 whitespace-pre-wrap">
+                                {log.homework}
+                              </p>
+                            </div>
+                          )}
                           {log.notes && (
                             <div>
                               <p className="text-sm font-medium text-gray-500">Notes</p>

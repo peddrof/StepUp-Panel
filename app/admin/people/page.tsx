@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import { attendedCount, buildRiskMap, type StudentRiskRow } from "@/lib/attendance";
 import { PeopleClient } from "./people-client";
 
 export default function PeoplePage() {
@@ -12,12 +13,13 @@ export default function PeoplePage() {
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
-    const [studentsRes, mentorsRes, groupsRes, groupStudentsRes, classLogsRes] = await Promise.all([
+    const [studentsRes, mentorsRes, groupsRes, groupStudentsRes, classLogsRes, riskRes] = await Promise.all([
       supabase.from("students").select("*").order("name"),
       supabase.from("mentors").select("*").order("name"),
       supabase.from("groups").select("*, mentor:mentors(*)").is("deleted_at", null),
       supabase.from("group_students").select("*"),
       supabase.from("class_logs").select("group_id, attendance_data").is("deleted_at", null),
+      supabase.rpc("get_student_risk"),
     ]);
 
     const students = studentsRes.data || [];
@@ -25,6 +27,7 @@ export default function PeoplePage() {
     const groups = groupsRes.data || [];
     const groupStudents = groupStudentsRes.data || [];
     const classLogs = classLogsRes.data || [];
+    const riskMap = buildRiskMap((riskRes.data as StudentRiskRow[]) || []);
 
     const studentsWithGroups = students.map((student: any) => {
       const studentGroupIds = groupStudents
@@ -36,17 +39,14 @@ export default function PeoplePage() {
         studentGroupIds.includes(log.group_id)
       );
       const totalClasses = studentLogs.length;
-      const attendedClasses = studentLogs.filter(
-        (log: any) =>
-          Array.isArray(log.attendance_data) &&
-          (log.attendance_data as string[]).includes(student.id)
-      ).length;
+      const attendedClasses = attendedCount(studentLogs, student.id);
 
       return {
         ...student,
         groups: studentGroups,
         totalClasses,
         attendedClasses,
+        risk: riskMap.get(student.id) ?? { atRisk: false, reason: null, label: null },
       };
     });
 
